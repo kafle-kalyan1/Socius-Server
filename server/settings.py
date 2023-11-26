@@ -103,7 +103,7 @@ DATABASES = {
         "NAME": "socius",
         "USER": "socius_user",
         "PASSWORD": "m8UJXiYDO5wenz8oCj0GCjcDrE1QLXSe",
-        "HOST": "dpg-clhk5gubbf9s73b1nfcg-a",
+        "HOST": "dpg-clhk5gubbf9s73b1nfcg-a.singapore-postgres.render.com",
         "PORT": "5432",
     }
         

@@ -14,3 +14,4 @@ sqlparse==0.4.4
 tzdata==2023.3
 urllib3==2.0.7
 django-cors-headers
+psycopg2
