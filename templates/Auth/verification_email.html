@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification</title>
+
+  <style>
+    .btn {
+      display: inline-block;
+      font-size: 14px;
+      padding: 12px 24px;
+      margin: 10px;
+      text-decoration: none;
+      color: #ffffff;
+      border-radius: 4px;
+      border: none;
+    }
+    .trend{
+      font-size: larger;
+      color: #2f80ed;
+    }
+    .link{
+      color: aqua;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <h1>Welcome to <span class="trend"> TrendWave! </span></h1>
+    <p>Thank you for signing up. To complete your registration, please verify your email address.</p>
+      <span>
+        OTP: <span class="link">{{otp}}</span>
+      </span>
+    <p>If you did not create an account on TrendWave, you can <u>Click here</u></p>
+    <p>Best regards,</p>
+    <p>The TrendWave Team</p>
+  </div>
+</body>
+</html>
