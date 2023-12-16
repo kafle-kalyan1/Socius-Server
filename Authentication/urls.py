@@ -1,7 +1,7 @@
 
 from django.urls import path
 from .serializerHandler import UserData, AccountRetrieveUpdateDestroyView
-from .views import UserRegistrationView, UserLoginView, UserProfileView, RefreshView, SendMail, VerifyOtp, UpdateProfile
+from .views import UserRegistrationView, UserLoginView, UserProfileView, RefreshView, SendMail, VerifyOtp, UpdateProfile, UpdateProfilePicture
 
 
 from rest_framework_simplejwt.views import (
@@ -22,6 +22,7 @@ urlpatterns = [
       path('email/', SendMail.as_view(), name='send_email'),
       path('verify/', VerifyOtp.as_view(), name='verify'),
       path('update/', UpdateProfile.as_view(), name='update-profile'),
+      path('updateProfilePicture/', UpdateProfilePicture.as_view(), name='update-profile-picture'),
      
      
     #  path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

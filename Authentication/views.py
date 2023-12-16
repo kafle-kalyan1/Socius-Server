@@ -22,6 +22,9 @@ import os
 from django.shortcuts import render
 
 
+from Core.utils import decrypt_data
+import base64
+
 
 def generateOTP():
     digits = "0123456789"
@@ -35,7 +38,7 @@ class UserRegistrationView(APIView):
         try:
             serializer = UserPublicSerializer(data=request.data)
             if User.objects.filter(username=request.data['username']).exists():
-                return Response({'message': "Username is already taken"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Username is already taken", "status_code":400 }, status=status.HTTP_400_BAD_REQUEST)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             user = User(username=request.data['username'], email=request.data['email'], password=make_password(
@@ -50,21 +53,23 @@ class UserRegistrationView(APIView):
 
             if otpResponse.status_code == 200:
                 user_profile.save()
-                return Response({'message': "Verification mail successfully send."}, status=status.HTTP_201_CREATED)
+                return Response({'message': "Verification mail successfully send.", "status_code":200}, status=status.HTTP_201_CREATED)            
             else:
                 user.delete()
-                return Response({'message': "Failed to send email. User creation aborted."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                return Response({'message': "Failed to send email. User creation aborted.","status_code":422, }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception as e :
             print(e )
             user.delete()
-            return Response({'message': "Something went wrong on the server."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server.", "status_code":500 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserLoginView(APIView):
     def post(self, request):
         try:            
             username = request.data.get('username')
-            password = request.data.get('password')       
+            password = request.data.get('password') 
+            # password = decrypt_data(password)      
+            # print(password)
             user = authenticate(username=username, password=password)
             print(user)
             if user is not None:
@@ -79,9 +84,9 @@ class UserLoginView(APIView):
                     emailResponse = send_email_register(
                         self.request, userData.email, otp)
                     if emailResponse.status_code == 200:
-                        return Response({'message': "Verification mail successfully send."},headers={'email':userData.email},status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                        return Response({'message': "Verification mail successfully send.","status_code":422 },headers={'email':userData.email},status=status.HTTP_422_UNPROCESSABLE_ENTITY)
                     else:
-                        return Response({'message': "Failed to send email. User creation aborted."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response({'message': "Failed to send email. User creation aborted.","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 else:
                     refresh = RefreshToken.for_user(user)
                     print(refresh)
@@ -91,10 +96,10 @@ class UserLoginView(APIView):
                     }
                     return Response(tokens, status=status.HTTP_200_OK)
             else:
-                return Response({'message': "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'message': "Invalid username or password","status_code":401}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e :
             print(e )
-            return Response({'message': "Something went wrong on the server"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserProfileView(APIView):
@@ -103,14 +108,23 @@ class UserProfileView(APIView):
     def get(self, request):
         try:
             user = request.user
-            profile = UserProfile.objects.get(user=user)   
-            print(profile)
-            return Response(status=status.HTTP_200_OK)
+            UserData = User.objects.get(username=user)
+            profile = UserProfile.objects.get(user=user)
+
+            ser_profile = UserPublicSerializer(UserData).data
+            extra = UserSerializer(profile).data
+            ser_profile.pop('password')
+            ser_profile.pop('id')
+            extra.pop('user')
+
+            final_data = { **ser_profile, **extra}
+                           
+            return Response({'status_code':200,'data':final_data},status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
-            return Response({'message': "Something went wrong on the server"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class RefreshView(TokenRefreshView):
@@ -118,14 +132,14 @@ class RefreshView(TokenRefreshView):
         refresh_token = request.data.get('refresh')
 
         if not refresh_token:
-            return Response({'error': 'Refresh token not provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Refresh token not provided',"status_code":400}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
             return Response({'access': access_token})
         except TokenError:
-            return Response({'error': 'Invalid refresh token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid refresh token',"status_code":400}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SendMail(APIView):
@@ -142,61 +156,155 @@ class VerifyOtp(APIView):
             email = request.data.get('email')
             otp = request.data.get('otp')
             if username is None or email is None:
-                return Response({'message': "Username or Email is not provided"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Username or Email is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
             
             user = authenticate(username=username, password=password)
             if user is None:
-                return Response({'message': "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Authentication failed","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
                         
             # Check if OTP is provided
             if otp is None:
-                return Response({'message': "OTP is not provided"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "OTP is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
             
             # Get the user's profile data
             profileData = UserProfile.objects.get(user=user)
             
             # Compare OTP
             if profileData.otp != str(otp):
-                return Response({'message': "OTP is not matched"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "OTP is not matched","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
             
             # check if OTP is expired
      
             # If OTP is matched, set isVerified to True
             if profileData.isVerified:
-                return Response({"message": "User is already verified!"}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"message": "User is already verified!","status_code":403}, status=status.HTTP_403_FORBIDDEN)
             else:
                 if (profileData.otp_created_at is None or profileData.otp_created_at < timezone.now() - timedelta(minutes=1440)):
-                    return Response({'message': "OTP is expired click 'Resend' to resend OTP"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'message': "OTP is expired click 'Resend' to resend OTP","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
                 profileData.isVerified = True
                 profileData.save()
-                return Response({"message": "Successfully Verified! Now You can login!"}, status=status.HTTP_202_ACCEPTED)
+                return Response({"message": "Successfully Verified! Now You can login!","status_code":202}, status=status.HTTP_202_ACCEPTED)
         except Exception as e:
             print(e)
-            return Response({"message": "Error Occurred on Server!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Error Occurred on Server!","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
         
 
 class UpdateProfile(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def put(self, request):
+    def post(self, request):
         try:
             user = request.user
             profile = UserProfile.objects.get(user=user)
             userData = User.objects.get(username=user)
             serializer = UserPublicSerializer(userData, data=request.data, partial=True)
             serializer2 = UserSerializer(profile, data=request.data, partial=True)
+            print(serializer)
 
             if serializer.is_valid() and serializer2.is_valid():
-                # if 'profile_picture' in request.data or request.data['profile_picture'] == "":
-                #     serializer2.fields.pop('profile_picture')
-                # print(serializer2.fields)
                 serializer.save()
                 serializer2.save()
-                return Response({'message': 'Profile updated successfully'}, status=status.HTTP_200_OK)
+                return Response({'message': 'Profile updated successfully',"status_code":200}, status=status.HTTP_200_OK)
             else:
-                return Response({'message': 'Maybe Username Already Exist'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Something went wrong',"status_code":400}, status=status.HTTP_400_BAD_REQUEST)
         except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
-            return Response({'message': "Something went wrong on the server"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#class for update profile picture
+class UpdateProfilePicture(APIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self, request):
+        try:
+           User = request.user
+           profile = UserProfile.objects.get(user=User)
+           profile_picture_data_uri = request.data.get('profile_picture')
+           if not profile_picture_data_uri:
+                return Response({'message': 'profile_picture is required', 'status_code': 400}, status=status.HTTP_400_BAD_REQUEST)
+           _, base64_data = profile_picture_data_uri.split(',')
+           decoded_picture = base64.b64decode(base64_data)
+           profile.profile_picture = decoded_picture
+           profile.save()
+           return Response({'message': 'Profile picture updated successfully', 'status_code': 200}, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+#class for update password with old password
+class UpdatePassword(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request):
+        try:
+            user = request.user
+            userData = User.objects.get(username=user)
+            old_password = request.data.get('old_password')
+            new_password = request.data.get('new_password')
+            if old_password is None or new_password is None:
+                return Response({'message': "Old Password or New Password is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = authenticate(username=user, password=old_password)
+            if user is None:
+                return Response({'message': "Authentication failed","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            userData.set_password(new_password)
+            userData.save()
+            return Response({'message': 'Password updated successfully',"status_code":200}, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#class for update password without old password with email verification
+class UpdatePasswordWithoutOldPassword(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request):
+        try:
+            user = request.user
+            userData = User.objects.get(username=user)
+            email = request.data.get('email')
+            new_password = request.data.get('new_password')
+            otp = request.data.get('otp')
+            if email is None or new_password is None:
+                return Response({'message': "Email or New Password is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = authenticate(username=user, password=new_password)
+            if user is None:
+                return Response({'message': "Authentication failed","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if OTP is provided
+            if otp is None:
+                return Response({'message': "OTP is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get the user's profile data
+            profileData = UserProfile.objects.get(user=user)
+            
+            # Compare OTP
+            if profileData.otp != str(otp):
+                return Response({'message': "OTP is not matched","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # check if OTP is expired
+     
+            # If OTP is matched, set isVerified to True
+            if profileData.isVerified:
+                return Response({"message": "User is already verified!","status_code":403}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                if (profileData.otp_created_at is None or profileData.otp_created_at < timezone.now() - timedelta(minutes=1440)):
+                    return Response({'message': "OTP is expired click 'Resend' to resend OTP","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+                profileData.isVerified = True
+                profileData.save()
+                userData.set_password(new_password)
+                userData.save()
+                return Response({"message": "Successfully Verified! Now You can login!","status_code":202}, status=status.HTTP_202_ACCEPTED)
+        except UserProfile.DoesNotExist:
+            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
