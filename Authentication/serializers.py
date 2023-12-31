@@ -14,6 +14,8 @@ class UserPublicSerializer(serializers.ModelSerializer):
             'last_login',
             'is_active',
             'date_joined',
+            'first_name',
+            'last_name',
         ]
 
 
@@ -21,4 +23,4 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['user', 'fullname', 'profile_picture', 'isVerified',
-                  'date_of_birth', 'gender', 'bio']
+                  'date_of_birth', 'gender', 'bio', 'phone_number', 'secondary_email']

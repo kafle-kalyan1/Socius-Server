@@ -197,9 +197,11 @@ class UpdateProfile(APIView):
             user = request.user
             profile = UserProfile.objects.get(user=user)
             userData = User.objects.get(username=user)
+            print(userData)
             serializer = UserPublicSerializer(userData, data=request.data, partial=True)
             serializer2 = UserSerializer(profile, data=request.data, partial=True)
             print(serializer)
+            print(serializer2)
 
             if serializer.is_valid() and serializer2.is_valid():
                 serializer.save()
@@ -238,8 +240,7 @@ class UpdateProfilePicture(APIView):
 #class for update password with old password
 class UpdatePassword(APIView):
     permission_classes = (IsAuthenticated,)
-
-    def put(self, request):
+    def post(self, request):
         try:
             user = request.user
             userData = User.objects.get(username=user)
@@ -259,52 +260,4 @@ class UpdatePassword(APIView):
         except Exception as e:
             print(e)
             return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#class for update password without old password with email verification
-class UpdatePasswordWithoutOldPassword(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def put(self, request):
-        try:
-            user = request.user
-            userData = User.objects.get(username=user)
-            email = request.data.get('email')
-            new_password = request.data.get('new_password')
-            otp = request.data.get('otp')
-            if email is None or new_password is None:
-                return Response({'message': "Email or New Password is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
-            
-            user = authenticate(username=user, password=new_password)
-            if user is None:
-                return Response({'message': "Authentication failed","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Check if OTP is provided
-            if otp is None:
-                return Response({'message': "OTP is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Get the user's profile data
-            profileData = UserProfile.objects.get(user=user)
-            
-            # Compare OTP
-            if profileData.otp != str(otp):
-                return Response({'message': "OTP is not matched","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # check if OTP is expired
-     
-            # If OTP is matched, set isVerified to True
-            if profileData.isVerified:
-                return Response({"message": "User is already verified!","status_code":403}, status=status.HTTP_403_FORBIDDEN)
-            else:
-                if (profileData.otp_created_at is None or profileData.otp_created_at < timezone.now() - timedelta(minutes=1440)):
-                    return Response({'message': "OTP is expired click 'Resend' to resend OTP","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
-                profileData.isVerified = True
-                profileData.save()
-                userData.set_password(new_password)
-                userData.save()
-                return Response({"message": "Successfully Verified! Now You can login!","status_code":202}, status=status.HTTP_202_ACCEPTED)
-        except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            print(e)
-            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+       

@@ -10,6 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 import cloudinary
 import cloudinary.uploader
@@ -28,9 +31,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-from dotenv import load_dotenv
-import os
-from datetime import timedelta
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["socius.onrender.com", "localhost","127.0.0.1"]
+ALLOWED_HOSTS = ["socius.onrender.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -47,12 +47,17 @@ ALLOWED_HOSTS = ["socius.onrender.com", "localhost","127.0.0.1"]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
+    'channels',
+    'daphne',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
     'Authentication',
+    'Posts',
+    'UserData',
+    'Chat',
     "corsheaders",
     'rest_framework_simplejwt',
 ]
@@ -86,29 +91,48 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'server.wsgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
+# WSGI_APPLICATION = 'server.wsgi.application'
+ASGI_APPLICATION = 'server.asgi.application'
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [('localhost', 6379)],
+#         },
+#     },
+# }
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-   
-#    "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": "socius",
-#         "USER": "kalyankafle123",
-#         "PASSWORD": "hljYmQKv01Go",
-#         "HOST": "ep-dry-forest-43219201.ap-southeast-1.aws.neon.tech",
-#         "PORT": "5432",
-#     }
-        
-}
+    # postgre local server
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql_psycopg2",
+    #     "NAME": "socius",
+    #     "USER": "postgres",
+    #     "PASSWORD": "12345",
+    #     "HOST": "localhost",
+    #     "PORT": "5432",
+    # },
 
+       "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "socius",
+            "USER": "kalyankafle123",
+            "PASSWORD": "hljYmQKv01Go",
+            "HOST": "ep-dry-forest-43219201.ap-southeast-1.aws.neon.tech",
+            "PORT": "5432",
+        }
+
+}
 
 
 # Password validation
@@ -153,7 +177,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
 ########################################################################
 
 # settings.py
@@ -162,8 +185,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-     'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',
+                                       ),
     'PAGE_SIZE': 10
 }
 
@@ -183,14 +206,14 @@ CORS_ALLOW_HEADERS = (
     "x-requested-with",
     'refreshToken',
     'Authorization',
-    
+
 )
 
 
-cloudinary.config( 
-  cloud_name =  os.environ.get('CLOUDINARY_CLOUD_NAME'), 
-  api_key =  os.environ.get('CLOUDINARY_API_KEY'), 
-  api_secret =  os.environ.get('CLOUDINARY_API_SECRET') 
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
 )
 
 SIMPLE_JWT = {
@@ -210,4 +233,3 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('SMTP_EMAIL')
 EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASSWORD')
-
