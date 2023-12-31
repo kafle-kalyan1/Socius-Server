@@ -24,8 +24,6 @@ redis
 service-identity
 six
 sqlparse
-Twisted
-twisted-iocpsupport
 txaio
 typing_extensions
 zope.interface
