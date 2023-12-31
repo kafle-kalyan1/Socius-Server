@@ -28,5 +28,4 @@ Twisted
 twisted-iocpsupport
 txaio
 typing_extensions
-tzdatarllib3
 zope.interface
