@@ -15,16 +15,11 @@ djangorestframework
 djangorestframework-simplejwt
 gunicorn
 hyperlink
-idnancremental
-msgpack
-packagingillow
 psycopg2
 pyasn1
 pyasn1-modules
-pycparseryJWT
 pyOpenSSL
 python-dotenv
-pytzost1
 redis
 service-identity
 six
