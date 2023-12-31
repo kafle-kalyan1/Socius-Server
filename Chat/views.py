@@ -27,9 +27,8 @@ class UserMessageView(APIView):
             
             user_profile = UserProfile.objects.get(user=other_user)
 
-            profile_picture = None
-            if user_profile.profile_picture:
-                  profile_picture = base64.b64encode(user_profile.profile_picture).decode('utf-8')
+
+            profile_picture = base64.b64encode(user_profile.profile_picture) if user_profile.profile_picture is not None else None
 
             last_messages.append({
                   'username': other_user.username,
