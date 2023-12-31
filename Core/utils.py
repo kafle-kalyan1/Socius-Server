@@ -7,9 +7,9 @@ from hashlib import sha256
 
 
 load_dotenv()
-secret_key = os.environ.get('SECRET_KEY').encode()
 
 def decrypt_data(encrypted_data):
+    secret_key = os.environ.get('SECRET_KEY').encode()
     # Decode the base64 encoded string to bytes 
     encrypted_bytes = base64.b64decode(encrypted_data)  
 
@@ -26,6 +26,7 @@ def decrypt_data(encrypted_data):
 # Example usage in a Django view
 def decrypt_view(request):
     if request.method == 'POST':
+        secret_key = os.environ.get('SECRET_KEY').encode()
         encrypted_data = request.POST.get('encrypted_data', '')
 
         # Decrypt the data
