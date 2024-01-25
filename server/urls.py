@@ -7,6 +7,7 @@ urlpatterns = [
     path('auth/', include('Authentication.urls')),
     path('user/', include('UserData.urls')),
     path('chat/', include('Chat.urls')),
+    path('posts/', include('Posts.urls')),
 ]
 
 

@@ -18,7 +18,7 @@ def send_email_register(request, email, otp):
     from_email = server.settings.EMAIL_HOST_USER
     to_email = [email]
     print(otp)
-    htmldir = (f'{server.settings.BASE_DIR}\\templates\\Auth\\verification_email.html')
+    htmldir = (f'{server.settings.BASE_DIR}/templates/Auth/verification_email.html')
     html_content = render_to_string(htmldir,{'otp':otp})
     text_content = strip_tags(html_content)
 

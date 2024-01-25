@@ -14,9 +14,7 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +33,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+
+print(os.environ.get('DJANGO_SECRET_KEY'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -114,23 +114,23 @@ ASGI_APPLICATION = 'server.asgi.application'
 
 DATABASES = {
     # postgre local server
-    # "default": {
-    #     "ENGINE": "django.db.backends.postgresql_psycopg2",
-    #     "NAME": "socius",
-    #     "USER": "postgres",
-    #     "PASSWORD": "12345",
-    #     "HOST": "localhost",
-    #     "PORT": "5432",
-    # },
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "socius",
+        "USER": "postgres",
+        "PASSWORD": "12345",
+        "HOST": "localhost",
+        "PORT": "5432",
+    },
 
-       "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "socius",
-            "USER": "kalyankafle123",
-            "PASSWORD": "hljYmQKv01Go",
-            "HOST": "ep-dry-forest-43219201.ap-southeast-1.aws.neon.tech",
-            "PORT": "5432",
-        }
+    #    "default": {
+    #         "ENGINE": "django.db.backends.postgresql",
+    #         "NAME": "socius",
+    #         "USER": "kalyankafle123",
+    #         "PASSWORD": "hljYmQKv01Go",
+    #         "HOST": "ep-dry-forest-43219201.ap-southeast-1.aws.neon.tech",
+    #         "PORT": "5432",
+    #     }
 
 }
 
@@ -210,11 +210,11 @@ CORS_ALLOW_HEADERS = (
 )
 
 
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
-)
+# cloudinary.config(
+#     cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+#     api_key=os.environ.get('CLOUDINARY_API_KEY'),
+#     api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+# )
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1000),

@@ -24,3 +24,9 @@ class UserSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['user', 'fullname', 'profile_picture', 'isVerified',
                   'date_of_birth', 'gender', 'bio', 'phone_number', 'secondary_email']
+        
+
+class PostUserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['fullname']
