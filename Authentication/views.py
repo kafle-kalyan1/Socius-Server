@@ -225,9 +225,7 @@ class UpdateProfilePicture(APIView):
            profile_picture_data_uri = request.data.get('profile_picture')
            if not profile_picture_data_uri:
                 return Response({'message': 'profile_picture is required', 'status_code': 400}, status=status.HTTP_400_BAD_REQUEST)
-           _, base64_data = profile_picture_data_uri.split(',')
-           decoded_picture = base64.b64decode(base64_data)
-           profile.profile_picture = decoded_picture
+           profile.profile_picture = profile_picture_data_uri
            profile.save()
            return Response({'message': 'Profile picture updated successfully', 'status_code': 200}, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:

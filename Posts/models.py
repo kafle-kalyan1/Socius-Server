@@ -9,7 +9,7 @@ class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text_content = models.TextField()
-    images = ArrayField(ArrayField(models.TextField(blank=True,null=True)), blank=True, null=True)
+    images = ArrayField(models.CharField(blank=True,null=True), blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)
     reports_count = models.IntegerField(default=0)

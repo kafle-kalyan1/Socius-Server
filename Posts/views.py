@@ -26,6 +26,7 @@ class GetPosts(APIView):
     def get(self, request):
         posts = Post.objects.filter(is_deleted=False).order_by('-timestamp')
         serializer = PostSerializer(posts, many=True)
+        print(posts.query)
         return Response(serializer.data, status=status.HTTP_200_OK)
      
      
