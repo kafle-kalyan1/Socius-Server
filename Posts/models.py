@@ -24,7 +24,7 @@ class Like(models.Model):
     liked_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='likes')
     
     def __str__(self):
-        return self.liked_by-username + " " + self.post
+        return self.liked_by.username + " " + self.post.user.username
 
 
 class Comment(models.Model):
