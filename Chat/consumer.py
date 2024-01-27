@@ -1,13 +1,16 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from .models import Message, MessageNotification as Notification
+from .models import Message, MessageNotification
 from django.contrib.auth.models import User
 from channels.db import database_sync_to_async
 from UserData.models import Friendship
 from django.db.models import Q
-
+from Notification.consumers import NotificationConsumer
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.notification_consumer = NotificationConsumer()
     
     @database_sync_to_async
     def get_friendship_uuid(self, username_from, username_to):
@@ -100,39 +103,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
     @database_sync_to_async
     def create_notification(self, sender, receiver, message_text):
-        notification = Notification.objects.create(
+        notification = MessageNotification.objects.create(
             sender=sender,
             receiver=receiver,
             message=message_text,
         )
 
-class NotificationConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.user = self.scope['url_route']['kwargs']['user']
-        print(f"User {self.user} connected to notifications")
-        await self.channel_layer.group_add(
-                f"notifications_{self.user}",
-                self.channel_name
-            )
-        await self.accept()
+# class NotificationConsumer(AsyncWebsocketConsumer):
+    # async def connect(self):
+    #     self.user = self.scope['url_route']['kwargs']['user']
+    #     await self.channel_layer.group_add(
+    #             f"notifications_{self.user}",
+    #             self.channel_name
+    #         )
+    #     await self.accept()
             
 
-    async def disconnect(self, close_code):
-        self.user = self.scope['url_route']['kwargs']['user']
-        await self.channel_layer.group_discard(
-            f"notifications_{self.user}",
-            self.channel_name
-        )
+    # async def disconnect(self, close_code):
+    #     self.user = self.scope['url_route']['kwargs']['user']
+    #     await self.channel_layer.group_discard(
+    #         f"notifications_{self.user}",
+    #         self.channel_name
+    #     )
         
-    async def notification(self, event):
-        message = event['message']
-        timestamp = event['timestamp']
-        sender = event['sender']
+    # async def notification(self, event):
+    #     message = event['message']
+    #     timestamp = event['timestamp']
+    #     sender = event['sender']
         
 
-        # Send the notification to the WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message,
-            'timestamp': timestamp,
-            'sender': sender,
-        }))
+    #     # Send the notification to the WebSocket
+    #     await self.send(text_data=json.dumps({
+    #         'message': message,
+    #         'timestamp': timestamp,
+    #         'sender': sender,
+    #     }))
