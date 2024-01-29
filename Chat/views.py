@@ -47,14 +47,11 @@ class MessageView(APIView):
         username = request.GET.get('username')
         other_user = User.objects.get(username=username)
         page = int(request.GET.get('page', 1))
-        print(page)
         page_size = 10
 
         messages = Message.objects.filter(
             Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
         ).order_by('-timestamp')[(page - 1) * page_size : page * page_size]
-
-        print(messages.query)
 
         serializer = MessageSerializer(messages, many=True)
                 

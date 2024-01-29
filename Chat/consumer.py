@@ -6,6 +6,8 @@ from channels.db import database_sync_to_async
 from UserData.models import Friendship
 from django.db.models import Q
 from Notification.consumers import NotificationConsumer
+from UserData.models import UserProfile
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -57,6 +59,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         return message
 
+    @database_sync_to_async
+    def get_user_profile(self, username):
+        user_profile = UserProfile.objects.get(user__username=username)
+        return user_profile.profile_picture, user_profile.fullname
+    
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message_text = text_data_json['message']
@@ -66,8 +73,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.save_message_to_database(sender, receiver, message_text, text_data_json['timestamp'])
 
         # print group details
-        await self.create_notification(sender, receiver, message_text)
-
         # Broadcast the message to the group
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -80,61 +85,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
         
+
+        
+        profile_picture, fullname = await self.get_user_profile(self.username_from)
+
         await self.channel_layer.group_send(
             f"notifications_{self.username_to}",
             {
-                'type': 'notification',
+                'type': 'message',
                 'message': message_text,
                 'sender': self.username_from,
                 'timestamp': text_data_json['timestamp'],
+                            'profile_picture': profile_picture,
+            'fullname': fullname,
             }
         )
 
-    async def message(self, event):
-        message = event['message']
-
-        # Send the message to the WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message,
-            'username_from': event['username_from'],
-            'username_to': event['username_to'],
-            'timestamp': event['timestamp'],
-        }))
-        
-    @database_sync_to_async
-    def create_notification(self, sender, receiver, message_text):
-        notification = MessageNotification.objects.create(
-            sender=sender,
-            receiver=receiver,
-            message=message_text,
-        )
-
-# class NotificationConsumer(AsyncWebsocketConsumer):
-    # async def connect(self):
-    #     self.user = self.scope['url_route']['kwargs']['user']
-    #     await self.channel_layer.group_add(
-    #             f"notifications_{self.user}",
-    #             self.channel_name
-    #         )
-    #     await self.accept()
-            
-
-    # async def disconnect(self, close_code):
-    #     self.user = self.scope['url_route']['kwargs']['user']
-    #     await self.channel_layer.group_discard(
-    #         f"notifications_{self.user}",
-    #         self.channel_name
-    #     )
-        
-    # async def notification(self, event):
-    #     message = event['message']
-    #     timestamp = event['timestamp']
-    #     sender = event['sender']
-        
-
-    #     # Send the notification to the WebSocket
-    #     await self.send(text_data=json.dumps({
-    #         'message': message,
-    #         'timestamp': timestamp,
-    #         'sender': sender,
-    #     }))
+ 
