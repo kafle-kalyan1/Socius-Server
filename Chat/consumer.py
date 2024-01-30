@@ -96,9 +96,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'message': message_text,
                 'sender': self.username_from,
                 'timestamp': text_data_json['timestamp'],
-                            'profile_picture': profile_picture,
-            'fullname': fullname,
+                'profile_picture': profile_picture,
+                'fullname': fullname,
             }
         )
 
- 
+    async def message(self, event):
+        message = event['message']
+        await self.send(text_data=json.dumps({
+            'message': message,
+            'username_from': event['username_from'],
+            'username_to': event['username_to'],
+            'timestamp': event['timestamp'],
+        })) 

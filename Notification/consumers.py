@@ -125,6 +125,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         }))
         
     async def message(self, event):
+        print(event)
+        type = event['type']
         message = event['message']
         timestamp = event['timestamp']
         sender = event['sender']
@@ -132,7 +134,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         fullname = event['fullname']
 
         await self.send(text_data=json.dumps({
-            'type': 'message',
+            'type': type,
             'message': message,
             'timestamp': timestamp,
             'sender': sender,
