@@ -58,8 +58,7 @@ class UserRegistrationView(APIView):
                 user.delete()
                 return Response({'message': "Failed to send email. User creation aborted.","status_code":422, }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception as e :
-            print(e )
-            user.delete()
+            print(e)
             return Response({'message': "Something went wrong on the server.", "status_code":500 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

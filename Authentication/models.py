@@ -16,6 +16,7 @@ class UserProfile(models.Model):
     secondary_email = models.EmailField(blank=True, null=True)
     otp = models.CharField(max_length=6)
     otp_created_at = models.DateTimeField(null=True, blank=True)
+    overall_sentiment = models.FloatField(default=0.3)
 
     def __str__(self):
         return self.user.username
