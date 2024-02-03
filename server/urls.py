@@ -8,6 +8,7 @@ urlpatterns = [
     path('user/', include('UserData.urls')),
     path('chat/', include('Chat.urls')),
     path('posts/', include('Posts.urls')),
+    path('utils/', include('UserUtils.urls')),
 ]
 
 
