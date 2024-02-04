@@ -7,7 +7,6 @@ from .serializers import UserPublicSerializer, UserSerializer
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-import json
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError
@@ -15,15 +14,10 @@ from .utils import send_email_register
 
 
 import secrets
-import time
 from django.utils import timezone
 from datetime import timedelta
-import os
-from django.shortcuts import render
 
-
-from Core.utils import decrypt_data
-import base64
+from django.db import transaction
 
 
 def generateOTP():
@@ -34,6 +28,7 @@ def generateOTP():
     return OTP
 
 class UserRegistrationView(APIView):
+    @transaction.atomic
     def post(self, request):
         try:
             serializer = UserPublicSerializer(data=request.data)
@@ -63,6 +58,7 @@ class UserRegistrationView(APIView):
 
 
 class UserLoginView(APIView):
+    @transaction.atomic
     def post(self, request):
         try:            
             username = request.data.get('username')
@@ -103,6 +99,7 @@ class UserLoginView(APIView):
 
 class UserProfileView(APIView):
     permission_classes = (IsAuthenticated,)
+    @transaction.atomic
 
     def get(self, request):
         try:
@@ -127,6 +124,7 @@ class UserProfileView(APIView):
 
 
 class RefreshView(TokenRefreshView):
+    @transaction.atomic
     def post(self, request):
         refresh_token = request.data.get('refresh')
 
@@ -142,12 +140,14 @@ class RefreshView(TokenRefreshView):
 
 
 class SendMail(APIView):
+    @transaction.atomic
     def post(self, request):
         send_email_register(self.request)
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 
 class VerifyOtp(APIView):
+    @transaction.atomic
     def post(self ,request):
         try:
             username = request.data.get('username')
@@ -190,7 +190,7 @@ class VerifyOtp(APIView):
 
 class UpdateProfile(APIView):
     permission_classes = (IsAuthenticated,)
-
+    @transaction.atomic
     def post(self, request):
         try:
             user = request.user
@@ -217,6 +217,7 @@ class UpdateProfile(APIView):
 #class for update profile picture
 class UpdateProfilePicture(APIView):
     permission_classes = (IsAuthenticated,)
+    @transaction.atomic
     def post(self, request):
         try:
            User = request.user
@@ -237,6 +238,7 @@ class UpdateProfilePicture(APIView):
 #class for update password with old password
 class UpdatePassword(APIView):
     permission_classes = (IsAuthenticated,)
+    @transaction.atomic
     def post(self, request):
         try:
             user = request.user
