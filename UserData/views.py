@@ -6,13 +6,16 @@ from rest_framework.views import APIView
 from Authentication.models import UserProfile
 from .models import FriendRequest, Friendship
 import base64
+from Notification.models import FriendRequestNotification
 from django.db.models import Q
 from django.contrib.auth.models import User
 from Authentication.serializers import UserPublicSerializer, UserSerializer
+from django.db import transaction
+
 
 class RecommendedFriends(APIView):
     permission_classes = (IsAuthenticated,)
-
+    @transaction.atomic
     def get(self, request):
         try:
             user_profile = get_object_or_404(UserProfile, user=request.user)
@@ -55,7 +58,8 @@ class RecommendedFriends(APIView):
 
 
 class GetOtherProfile(APIView):
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
+    @transaction.atomic
 
     def get(self, request, username):
         try:
@@ -82,6 +86,7 @@ class GetOtherProfile(APIView):
 class FriendRequestBase(APIView):
     permission_classes = (IsAuthenticated,)
     action = ''
+    @transaction.atomic
 
     def post(self, request):
         try:
@@ -103,14 +108,17 @@ class FriendRequestBase(APIView):
 
 class SendFriendRequest(FriendRequestBase):
     action = 'send friend request'
+    @transaction.atomic
 
     def handle_friend_request(self, user_profile, friend_profile):
         friend_request = FriendRequest.objects.create(sender=user_profile, receiver=friend_profile, status='pending')
         friend_request.save()
+        FriendRequestNotification.objects.create(from_user=user_profile, to_user=friend_profile)
         return Response({'status': 200, 'message': 'Friend request sent'}, status=status.HTTP_200_OK)
 
 class AcceptFriendRequest(FriendRequestBase):
     action = 'accept friend request'
+    @transaction.atomic
 
     def handle_friend_request(self, user_profile, friend_profile):
         friend_request = FriendRequest.objects.get(sender=friend_profile, receiver=user_profile, status='pending')
@@ -121,6 +129,7 @@ class AcceptFriendRequest(FriendRequestBase):
 
 class RejectFriendRequest(FriendRequestBase):
     action = 'reject friend request'
+    @transaction.atomic
 
     def handle_friend_request(self, user_profile, friend_profile):
         friend_request = FriendRequest.objects.get(sender=friend_profile, receiver=user_profile, status='pending')
@@ -130,6 +139,8 @@ class RejectFriendRequest(FriendRequestBase):
 
 class CancelFriendRequest(FriendRequestBase):
     action = 'cancel friend request'
+    @transaction.atomic
+    
     def handle_friend_request(self, user_profile, friend_profile):
         friend_request = FriendRequest.objects.get(sender=user_profile, receiver=friend_profile, status='pending')
         friend_request.delete()
@@ -137,6 +148,8 @@ class CancelFriendRequest(FriendRequestBase):
 
 class RemoveFriend(FriendRequestBase):
     action = 'remove friend'
+    @transaction.atomic
+    
     def handle_friend_request(self, user_profile, friend_profile):
         friendship = Friendship.objects.get(Q(user1=user_profile, user2=friend_profile) | Q(user1=friend_profile, user2=user_profile), status='accepted')
         friendship.delete()

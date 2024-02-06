@@ -34,10 +34,3 @@ class Friendship(models.Model):
     def __str__(self):
         return f"{self.user1.username} <-> {self.user2.username} ({self.status})"
 
-class FriendRequestNotification(models.Model):
-    timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
-    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='from_user')
-    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='to_user')
-    is_deleted = models.BooleanField(default=False)
-

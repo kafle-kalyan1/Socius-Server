@@ -13,10 +13,17 @@ from Authentication.serializers import UserDetailedSerializer, UserSerializer
 from Posts.models import Post
 from Posts.serializers import PostSerializer
 from django.core.paginator import Paginator
+from django.db import transaction
+from Notification.models import MessageNotification
+from Notification.models import FriendRequestNotification
+from UserUtils.serializer import (UserNotificationForFriendRequestSerializer,
+    UserNotificationForMessageSerializer)
+ 
 
 
 class Search(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
 
     def get(self, request):
         try:
@@ -64,4 +71,28 @@ class Search(APIView):
         except Exception as e:
             print(e)
             return Response({"message": "Search Failed! Something went wrong", "status": 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+
+class GetNotifications(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user = request.user
+            user_data = UserProfile.objects.get(user=user)
+            page = int(request.data.get("page", 1))
+            results_per_page = 10
+            
+            message_notifications = MessageNotification.objects.filter(receiver=user, is_read=False)
+            friend_request_notifications = FriendRequestNotification.objects.filter(to_user=user, is_read=False)
+            final = UserNotificationForFriendRequestSerializer(friend_request_notifications, many=True).data
+            final2 = UserNotificationForMessageSerializer(message_notifications, many=True).data
+            return Response({"message": "Ok", "status": 500, "data": {"message_notifications": final2, "friend_request_notifications": final}},
+                            status=status.HTTP_200_OK)
+             
+            pass
+        except Exception as e:
+            print(e)
+            return Response({"message": "Get Notifications Failed! Something went wrong", "status": 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)

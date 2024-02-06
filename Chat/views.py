@@ -9,6 +9,7 @@ from Authentication.models import UserProfile
 import base64
 from rest_framework import status
 from Authentication.serializers import UserPublicSerializer
+from Notification.models import MessageNotification
 
 
 
@@ -52,6 +53,12 @@ class MessageView(APIView):
         messages = Message.objects.filter(
             Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
         ).order_by('-timestamp')[(page - 1) * page_size : page * page_size]
+        
+        # Mark all messages as read
+        MessageNotification.objects.filter(
+            sender=other_user, receiver=user, is_read=False
+        ).update(is_read=True)
+        
 
         serializer = MessageSerializer(messages, many=True)
                 

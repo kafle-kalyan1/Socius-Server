@@ -1,6 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from .models import Message, MessageNotification
+from .models import Message
+from Notification.models import MessageNotification
 from django.contrib.auth.models import User
 from channels.db import database_sync_to_async
 from UserData.models import Friendship
@@ -58,6 +59,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             timestamp=timestamp,
         )
         return message
+    
+    @database_sync_to_async
+    def save_message_notification_to_database(self, sender, receiver, text, timestamp):
+        message_notification = MessageNotification.objects.create(
+            sender=sender,
+            receiver=receiver,
+            message=text,
+            timestamp=timestamp,
+        )
+        return message_notification
 
     @database_sync_to_async
     def get_user_profile(self, username):
@@ -70,8 +81,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         sender = await database_sync_to_async(User.objects.get)(username=self.username_from)
         receiver = await database_sync_to_async(User.objects.get)(username=self.username_to)
 
-        await self.save_message_to_database(sender, receiver, message_text, text_data_json['timestamp'])
+        await self.save_message_notification_to_database(sender, receiver, message_text, text_data_json['timestamp'])
 
+        await self.save_message_to_database(sender, receiver, message_text, text_data_json['timestamp'])
         # print group details
         # Broadcast the message to the group
         await self.channel_layer.group_send(
