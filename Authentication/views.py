@@ -181,7 +181,9 @@ class VerifyOtp(APIView):
                 if (profileData.otp_created_at is None or profileData.otp_created_at < timezone.now() - timedelta(minutes=1440)):
                     return Response({'message': "OTP is expired click 'Resend' to resend OTP","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
                 profileData.isVerified = True
+                profileData.otp = None
                 profileData.save()
+                
                 return Response({"message": "Successfully Verified! Now You can login!","status_code":202}, status=status.HTTP_202_ACCEPTED)
         except Exception as e:
             print(e)
@@ -260,3 +262,60 @@ class UpdatePassword(APIView):
             print(e)
             return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
        
+class ForgetPassword(APIView):
+    @transaction.atomic
+    def post(self, request):
+        try:
+            username = request.data.get('username')
+            email = request.data.get('email')
+            if username is None or email is None:
+                return Response({'message': "Username or Email is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(username=username)
+            if user is None:
+                return Response({'message': "User not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            profile = UserProfile.objects.get(user=user)
+            if profile is None:
+                return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            otp = generateOTP()
+            profile.otp = otp
+            profile.otp_created_at = timezone.now()
+            profile.save()
+            emailResponse = send_email_register(
+                self.request, email, otp)
+            if emailResponse.status_code == 200:
+                return Response({'message': "Verification mail successfully send.","status_code":200}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': "Failed to send email. User creation aborted.","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ResetPassword(APIView):
+    @transaction.atomic
+    def post(self, request):
+        try:
+            username = request.data.get('username')
+            password = request.data.get('password')
+            otp = request.data.get('otp')
+            if username is None or password is None:
+                return Response({'message': "Username or Password is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(username=username)
+            if user is None:
+                return Response({'message': "User not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            profile = UserProfile.objects.get(user=user)
+            if profile is None:
+                return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            if otp is None:
+                return Response({'message': "OTP is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            if profile.otp != str(otp):
+                return Response({'message': "OTP is not matched","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            if profile.otp_created_at < timezone.now() - timedelta(minutes=1440):
+                return Response({'message': "OTP is expired click 'Resend' to resend OTP","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(password)
+            user.save()
+            profile.otp = None
+            profile.save()
+            return Response({'message': 'Password updated successfully',"status_code":200}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -14,7 +14,7 @@ class UserProfile(models.Model):
     isVerified = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     secondary_email = models.EmailField(blank=True, null=True)
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=6,blank=True, null=True)
     otp_created_at = models.DateTimeField(null=True, blank=True)
     overall_sentiment = models.FloatField(default=0.3)
 
