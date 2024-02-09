@@ -1,3 +1,4 @@
+import django.core.paginator
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ import base64
 from rest_framework import status
 from Authentication.serializers import UserPublicSerializer
 from Notification.models import MessageNotification
+from django.core.paginator import Paginator, EmptyPage
 
 
 
@@ -48,21 +50,30 @@ class MessageView(APIView):
         username = request.GET.get('username')
         other_user = User.objects.get(username=username)
         page = int(request.GET.get('page', 1))
-        page_size = 10
+        page_size = 20
 
-        messages = Message.objects.filter(
-            Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
-        ).order_by('-timestamp')[(page - 1) * page_size : page * page_size]
+        messages_query = Message.objects.filter(
+        Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
+        ).order_by('-timestamp')
+        paginator = Paginator(messages_query, page_size)
         
+        try:
+            messages = paginator.page(page)
+        except EmptyPage:
+            return Response({
+                'status_code': 200,
+                'data': [],
+            }, status=status.HTTP_200_OK)
+
         # Mark all messages as read
         MessageNotification.objects.filter(
             sender=other_user, receiver=user, is_read=False
         ).update(is_read=True)
         
-
         serializer = MessageSerializer(messages, many=True)
                 
         return Response({
             'status_code': 200,
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
+        

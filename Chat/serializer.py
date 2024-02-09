@@ -9,12 +9,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['fullname', 'profile_picture']
 
 class UserSerializer(serializers.ModelSerializer):
+    userprofile = UserProfileSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = ['username']
+        fields = ['username', 'userprofile']
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = UserSerializer()
+    sender = UserSerializer(read_only=True)
+    receiver = UserSerializer(read_only=True)
+
     class Meta:
         model = Message
-        fields = ['sender', 'message', 'timestamp']
+        fields = ['sender', 'receiver', 'message', 'timestamp']
