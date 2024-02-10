@@ -27,9 +27,9 @@ class Search(APIView):
 
     def get(self, request):
         try:
-            keyword = request.data.get("keyword")
-            type = request.data.get("type", "all")
-            page = int(request.data.get("page", 1))
+            keyword = request.GET.get('keyword')
+            type = request.GET.get("type", "all")
+            page = int(request.GET.get("page", 1))
             results_per_page = 10
 
             if not keyword:
@@ -51,8 +51,8 @@ class Search(APIView):
                 post_results += list(posts)
 
             if not user_results and not post_results:
-                return Response({"message": "Search Failed! Invalid type", "status": 400},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "No result","data":{"post_data": [],"user_data":[]}, "status": 200},
+                                status=status.HTTP_200_OK)
 
             paginator = Paginator(user_results + post_results, results_per_page)
             paginated_results = paginator.get_page(page)
@@ -75,6 +75,7 @@ class Search(APIView):
             
 
 class GetNotifications(APIView):
+    
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
@@ -96,3 +97,43 @@ class GetNotifications(APIView):
             print(e)
             return Response({"message": "Get Notifications Failed! Something went wrong", "status": 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+
+class GetRecomandedUsers(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user = request.user
+            user_data = UserProfile.objects.get(user=user)
+            page = int(request.data.get("page", 1))
+            results_per_page = 10
+            users = UserProfile.objects.exclude(user=user).order_by('?')
+            paginator = Paginator(users, results_per_page)
+            paginated_users = paginator.get_page(page)
+            serializer = UserDetailedSerializer(paginated_users, many=True)
+            return Response({"message": "Ok", "status": 500, "data": serializer.data},
+                            status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"message": "Get Recomanded Users Failed! Something went wrong", "status": 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GetSomeTrendingPosts(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user = request.user
+            user_data = UserProfile.objects.get(user=user)
+            page = int(request.data.get("page", 1))
+            results_per_page = 10
+            posts = Post.objects.all().order_by('-timestamp')[:10]
+            paginator = Paginator(posts, results_per_page)
+            paginated_posts = paginator.get_page(page)
+            serializer = PostSerializer(paginated_posts, many=True)
+            return Response({"message": "Ok", "status": 500, "data": serializer.data},
+                            status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"message": "Get Some Trending Posts Failed! Something went wrong", "status": 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
