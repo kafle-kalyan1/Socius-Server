@@ -4,14 +4,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from Authentication.models import UserProfile
+from Posts.models import Post
 from .models import FriendRequest, Friendship
 import base64
 from Notification.models import FriendRequestNotification
 from django.db.models import Q
 from django.contrib.auth.models import User
-from Authentication.serializers import UserPublicSerializer, UserSerializer
+from Authentication.serializers import UserPublicSerializer, UserSerializer,UserDetailedSerializer
 from django.db import transaction
-
+from Posts.serializers import PostSerializer, CommentSerializer
+from Posts.models import Comment, Post
 
 class RecommendedFriends(APIView):
     permission_classes = (IsAuthenticated,)
@@ -63,18 +65,41 @@ class GetOtherProfile(APIView):
 
     def get(self, request, username):
         try:
-            user_data = get_object_or_404(User, username=username)
-            profile = User.objects.get(user=user_data)
-
-            if profile:
-                user_profile = UserPublicSerializer(user_data).data
-                extra = UserSerializer(profile).data
-                user_profile.pop('password')
-                user_profile.pop('id')
-                extra.pop('user')
-                final_data = {**user_profile, **extra}
-                return Response({'status': 200, 'data': final_data, 'posts': None},
-                                status=status.HTTP_200_OK)
+            user_data = User.objects.filter(username=username).first()
+            print(user_data)
+            if user_data:
+                profile = User.objects.get(username=user_data)
+                user_profile = UserProfile.objects.get(user=profile)
+                user_serializer = UserDetailedSerializer(user_profile)
+                user_posts = Post.objects.filter(user=profile, is_deleted=False).order_by('-timestamp')
+                posts = PostSerializer(user_posts, many=True,context={'request': request})
+                
+                # check if both user are friends or not 
+                user_profile = UserProfile.objects.get(user=request.user)
+                friend_profile = UserProfile.objects.get(user=profile)
+                is_friend = False
+                is_requested = False
+                is_requested_by_me = False
+                friendship = Friendship.objects.filter(Q(user1=user_profile.user, user2=friend_profile.user) | Q(user1=friend_profile.user, user2=user_profile.user), status='accepted')
+                if friendship:
+                    is_friend = True
+                else:
+                    friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending') | Q(sender=friend_profile.user, receiver=user_profile.user, status='pending'))
+                    if friend_request:
+                        is_requested = True
+                    else:
+                        friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending'))
+                        if friend_request:
+                            is_requested_by_me = True
+                if user_profile:
+                    return Response({'status': 200, 'data':{
+                    "data": user_serializer.data,
+                    "is_friend": is_friend,
+                    "is_requested": is_requested,
+                    "is_requested_by_me": is_requested_by_me,
+                    "posts": posts.data
+                    },},
+                                status=status.HTTP_200_OK)   
             else:
                 return Response({'message': "User profile not found", 'status': 404},
                                 status=status.HTTP_404_NOT_FOUND)

@@ -1,3 +1,4 @@
+import django.db
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -12,12 +13,13 @@ from .serializers import PostSerializer, CommentSerializer
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from Authentication.models import UserProfile
 from UserData.models import FriendRequest, Friendship
-
+from django.db import transaction
 
 
 # Create your views here.
 class CreatePost(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def post(self, request):
         user = request.user
         text_content = request.data.get('text_content')
@@ -38,6 +40,7 @@ class CreatePost(APIView):
 
 class GetPosts(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def get(self, request):
         sort = request.GET.get('sort', 'default')
         user = request.user
@@ -61,6 +64,7 @@ class GetPosts(APIView):
     
 class GetPost(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def get(self, request, post_uid):
         post = Post.objects.get(id=post_uid)
         serializer = PostSerializer(post)
@@ -73,7 +77,7 @@ class GetPost(APIView):
 
 class DeletePost(APIView):
     permission_classes = [IsAuthenticated]
-
+    @transaction.atomic
     def post(self, request):
         post_id = request.data.get('post_id')
         if not post_id:
@@ -81,8 +85,7 @@ class DeletePost(APIView):
         try:
             post = Post.objects.get(id=post_id)
         except Post.DoesNotExist:
-            raise Http404
-
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
         if post.user != request.user:
             return Response({'error': 'You are not authorized to delete this post'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -96,6 +99,7 @@ class DeletePost(APIView):
    
 class ReportPost(APIView):
       permission_classes = [IsAuthenticated]
+      @transaction.atomic
       def post(self, request):
          post_id = request.data.get("post_id")
          post = Post.objects.get(id=post_id)
@@ -105,6 +109,7 @@ class ReportPost(APIView):
       
 class LikePost(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def post(self, request):
         try:
             post_id = request.data.get("post_id")
@@ -130,6 +135,7 @@ class LikePost(APIView):
 
 class CommentPost(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def post(self, request):
         try:
             post_id = request.data.get("post_id")
@@ -152,6 +158,7 @@ class CommentPost(APIView):
         
 class DeleteComment(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def post(self, request):
         try:
             comment_id = request.data.get("comment_id")
@@ -174,6 +181,7 @@ class DeleteComment(APIView):
       
 class GetOwnPost(APIView):
     permission_classes = [IsAuthenticated]
+    @transaction.atomic
     def get(self, request):
         user = request.user
         posts = Post.objects.filter(is_deleted=False, user=user).order_by('-timestamp')
