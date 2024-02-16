@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from Authentication.models import UserProfile
 import base64
 from rest_framework import status
-from Authentication.serializers import UserPublicSerializer
+from Authentication.serializers import UserDetailedSerializer, UserPublicSerializer
 from Notification.models import MessageNotification
 from django.core.paginator import Paginator, EmptyPage
 
@@ -69,11 +69,15 @@ class MessageView(APIView):
         MessageNotification.objects.filter(
             sender=other_user, receiver=user, is_read=False
         ).update(is_read=True)
+        other_user = UserProfile.objects.get(user=other_user)
+        
+        user_data = UserDetailedSerializer(other_user).data
         
         serializer = MessageSerializer(messages, many=True)
                 
         return Response({
             'status_code': 200,
             'data': serializer.data,
+            'user': user_data,
         }, status=status.HTTP_200_OK)
         
