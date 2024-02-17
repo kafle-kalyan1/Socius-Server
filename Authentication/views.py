@@ -198,23 +198,29 @@ class UpdateProfile(APIView):
             user = request.user
             profile = UserProfile.objects.get(user=user)
             userData = User.objects.get(username=user)
-            print(userData)
-            serializer = UserPublicSerializer(userData, data=request.data, partial=True)
-            serializer2 = UserSerializer(profile, data=request.data, partial=True)
-            print(serializer)
-            print(serializer2)
-
-            if serializer.is_valid() and serializer2.is_valid():
-                serializer.save()
-                serializer2.save()
-                return Response({'message': 'Profile updated successfully',"status_code":200}, status=status.HTTP_200_OK)
+            fullname = request.data.get('fullname')
+            if(fullname is not None):
+                profile.fullname = fullname
             else:
-                return Response({'message': 'Something went wrong',"status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Fullname is required","status":400}, status=status.HTTP_400_BAD_REQUEST)
+            gender = request.data.get('gender')
+            if(gender is not None):
+                profile.gender = gender
+            else:
+                return Response({'message':"Gender is required","status":400}, status=status.HTTP_400_BAD_REQUEST)
+            profile.bio = request.data.get('bio')
+            profile.secondary_email = request.data.get('secondary_email')
+            profile.phone_number = request.data.get('phone_number')
+            userData.first_name = request.data.get('first_name')
+            userData.last_name = request.data.get('last_name')
+            userData.save()
+            profile.save()
+            return Response({'message': 'Profile updated successfully',"status":200}, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': "User profile not found","status":404}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
-            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #class for update profile picture
 class UpdateProfilePicture(APIView):
@@ -226,15 +232,15 @@ class UpdateProfilePicture(APIView):
            profile = UserProfile.objects.get(user=User)
            profile_picture_data_uri = request.data.get('profile_picture')
            if not profile_picture_data_uri:
-                return Response({'message': 'profile_picture is required', 'status_code': 400}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'profile_picture is required', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
            profile.profile_picture = profile_picture_data_uri
            profile.save()
-           return Response({'message': 'Profile picture updated successfully', 'status_code': 200}, status=status.HTTP_200_OK)
+           return Response({'message': 'Profile picture updated successfully', 'status': 200}, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': "User profile not found","status":404}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
-            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 #class for update password with old password
@@ -248,19 +254,19 @@ class UpdatePassword(APIView):
             old_password = request.data.get('old_password')
             new_password = request.data.get('new_password')
             if old_password is None or new_password is None:
-                return Response({'message': "Old Password or New Password is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Old Password or New Password is not provided","status":400}, status=status.HTTP_400_BAD_REQUEST)
             
             user = authenticate(username=user, password=old_password)
             if user is None:
-                return Response({'message': "Authentication failed","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': "Authentication failed","status":400}, status=status.HTTP_400_BAD_REQUEST)
             userData.set_password(new_password)
             userData.save()
-            return Response({'message': 'Password updated successfully',"status_code":200}, status=status.HTTP_200_OK)
+            return Response({'message': 'Password updated successfully',"status":200}, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
-            return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': "User profile not found","status":404}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(e)
-            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message': "Something went wrong on the server","status":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
        
 class ForgetPassword(APIView):
     @transaction.atomic
