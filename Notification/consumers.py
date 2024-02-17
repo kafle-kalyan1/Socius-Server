@@ -29,9 +29,10 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
             if event_type == 'friend_request':
                 sender_username = data['sender_username']
+                receiver_username = data['receiver_username']
                 profile_picture, fullname = await self.get_user_profile(sender_username)
                 await self.channel_layer.group_send(
-                    f"notifications_{sender_username}",
+                    f"notifications_{receiver_username}",
                     {
                         'type': 'friend_request',
                         'message': 'You have a new friend request',
@@ -43,14 +44,16 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 
             elif event_type == 'post_like':
                 liker_username = data['liker_username']
+                receiver = data['receiver']
                 post_id = data['post_id']
                 profile_picture, fullname = await self.get_user_profile(liker_username)
                 await self.channel_layer.group_send(
-                    f"notifications_{liker_username}",
+                    f"notifications_{receiver}",
                     {
                         'type': 'post_like',
                         'message': f'Your post {post_id} has a new like',
                         'sender': liker_username,
+                        'post': post_id,
                         'profile_picture': profile_picture,
                         'fullname': fullname,
                     }
@@ -70,6 +73,40 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                         'fullname': fullname,
                     }
                 )
+
+            elif event_type == 'accept_request':
+                sender_username = data['sender_username']
+                receiver_username = data['receiver_username']
+                profile_picture, fullname = await self.get_user_profile(sender_username)
+                await self.channel_layer.group_send(
+                    f"notifications_{receiver_username}",
+                    {
+                        'type': 'accept_request',
+                        'message': f'{sender_username} has accepted your friend request',
+                        'sender': sender_username,
+                        'profile_picture': profile_picture,
+                        'fullname': fullname,
+                    }
+                )
+            
+            elif (event_type == 'post_comment'):
+                commenter_username = data['commenter_username']
+                receiver = data['receiver']
+                post_id = data['post_id']
+                comment = data['comment']
+                profile_picture, fullname = await self.get_user_profile(commenter_username)
+                await self.channel_layer.group_send(
+                    f"notifications_{receiver}",
+                    {
+                        'type': 'post_comment',
+                        'message': f'{fullname} has commented on your post "{comment.strip()[:20] + "..." if len(comment) > 20 else comment}"',
+                        'sender': commenter_username,
+                        'post': post_id,
+                        'profile_picture': profile_picture,
+                        'fullname': fullname,
+                    }
+                )      
+            
         except Exception as e:
             print(e)
             
@@ -98,10 +135,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         sender = event['sender']
         profile_picture = event['profile_picture']
         fullname = event['fullname']
+        post = event['post']
 
         await self.send(text_data=json.dumps({
             'type': 'post_like',
             'message': message,
+            'post':post,
             'sender': sender,
             'profile_picture': profile_picture,
             'fullname': fullname,
@@ -137,6 +176,36 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'type': type,
             'message': message,
             'timestamp': timestamp,
+            'sender': sender,
+            'profile_picture': profile_picture,
+            'fullname': fullname,
+        }))
+    
+    async def accept_request(self, event):
+        message = event['message']
+        sender = event['sender']
+        profile_picture = event['profile_picture']
+        fullname = event['fullname']
+
+        await self.send(text_data=json.dumps({
+            'type': 'accept_request',
+            'message': message,
+            'sender': sender,
+            'profile_picture': profile_picture,
+            'fullname': fullname,
+        }))
+        
+    async def post_comment(self, event):
+        message = event['message']
+        sender = event['sender']
+        profile_picture = event['profile_picture']
+        fullname = event['fullname']
+        post = event['post']
+
+        await self.send(text_data=json.dumps({
+            'type': 'post_comment',
+            'message': message,
+            'post':post,
             'sender': sender,
             'profile_picture': profile_picture,
             'fullname': fullname,

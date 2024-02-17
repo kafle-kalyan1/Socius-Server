@@ -36,6 +36,7 @@ class PostUserDataSerializer(serializers.ModelSerializer):
 class UserDetailedSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     is_active = serializers.BooleanField(source='user.is_active')
+    date_joined = serializers.DateTimeField(source='user.date_joined')
     fullname = serializers.CharField()
     date_of_birth = serializers.DateField()
     gender = serializers.CharField()
@@ -44,4 +45,4 @@ class UserDetailedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['username', 'is_active', 'fullname',  'date_of_birth', 'gender', 'bio', 'profile_picture']
+        fields = ['username', 'is_active','date_joined', 'fullname',  'date_of_birth', 'gender', 'bio', 'profile_picture']
