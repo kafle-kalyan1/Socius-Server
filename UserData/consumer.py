@@ -1,7 +1,11 @@
+from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
 from UserData.models import UserProfile
+from Notification.models import Notification
+import json
+
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):

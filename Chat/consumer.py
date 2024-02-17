@@ -1,4 +1,5 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.shortcuts import get_object_or_404
 import json
 from .models import Message
 from Notification.models import MessageNotification
@@ -19,8 +20,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def get_friendship_uuid(self, username_from, username_to):
         user1 = User.objects.get(username=username_from)
         user2 = User.objects.get(username=username_to)
-        friendship = Friendship.objects.get(
-            (Q(user1=user1, user2=user2) | Q(user1=user2, user2=user1)),
+        friendship = get_object_or_404(Friendship, 
+            (Q(user1=user1, user2=user2) | Q(user1=user2, user2=user1)), 
             status='accepted'
         )
 

@@ -12,6 +12,7 @@ from rest_framework import status
 from Authentication.serializers import UserDetailedSerializer, UserPublicSerializer
 from Notification.models import MessageNotification
 from django.core.paginator import Paginator, EmptyPage
+from UserData.models import Friendship
 
 
 
@@ -49,9 +50,22 @@ class MessageView(APIView):
         user = request.user
         username = request.GET.get('username')
         other_user = User.objects.get(username=username)
+        
+        # throw error if user does not exist
+        print(other_user)
+        if not other_user:
+            return Response({
+                'status_code': 400,
+                'message': 'User does not exist'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
         page = int(request.GET.get('page', 1))
         page_size = 20
-
+        
+        is_friend = Friendship.objects.filter(
+            (Q(user1=user, user2=other_user) | Q(user1=other_user, user2=user)), 
+            status='accepted'
+        ).exists()
         messages_query = Message.objects.filter(
         Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
         ).order_by('-timestamp')
@@ -79,5 +93,7 @@ class MessageView(APIView):
             'status_code': 200,
             'data': serializer.data,
             'user': user_data,
+            'is_friend': is_friend,
+
         }, status=status.HTTP_200_OK)
         
