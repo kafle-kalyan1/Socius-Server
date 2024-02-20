@@ -87,10 +87,13 @@ class GetOtherProfile(APIView):
                     friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending') | Q(sender=friend_profile.user, receiver=user_profile.user, status='pending'))
                     if friend_request:
                         is_requested = True
-                    else:
                         friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending'))
+                        print(friend_request.query)
                         if friend_request:
                             is_requested_by_me = True
+                    else:
+                        is_requested = False
+                        is_requested_by_me = False
                 if user_profile:
                     return Response({'status': 200, 'data':{
                     "data": user_serializer.data,
