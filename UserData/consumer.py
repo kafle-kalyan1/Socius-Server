@@ -33,7 +33,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
         from_user_profile = UserProfile.objects.get(user=from_user)
         full_name = from_user_profile.fullname
-        profile_image = from_user_profile.profile_picture.url if from_user_profile.profile_picture else None
+        profile_image = from_user_profile.profile_picture if from_user_profile.profile_picture else None
 
         # Send message to room group
         await self.channel_layer.group_send(

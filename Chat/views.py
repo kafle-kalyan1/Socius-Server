@@ -22,7 +22,11 @@ class UserMessageView(APIView):
     def get(self, request, format=None):
         user = request.user
         last_messages = []
-        all_users = User.objects.exclude(id=user.id)
+        friendships = Friendship.objects.filter(
+            Q(user1=user) | Q(user2=user), 
+            status='accepted'
+        )
+        all_users = [friendship.user2 if friendship.user1 == user else friendship.user1 for friendship in friendships]
 
         for other_user in all_users:
             last_message = Message.objects.filter(
