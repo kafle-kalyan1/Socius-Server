@@ -5,7 +5,7 @@ from django.db import models
 
 class UserSettings(models.Model):
    user = models.OneToOneField(User, on_delete=models.CASCADE)
-   dark_mode = models.BooleanField(default=False)
+   dark_mode = models.CharField(max_length=50, default="false")
    langauge = models.CharField(max_length=50, default="en")
    message_notification = models.BooleanField(default=True)
    friend_request_notification = models.BooleanField(default=True)

@@ -17,8 +17,8 @@ from django.db import transaction
 from Notification.models import MessageNotification
 from Notification.models import FriendRequestNotification
 from UserUtils.serializer import (UserNotificationForFriendRequestSerializer,
-    UserNotificationForMessageSerializer)
- 
+    UserNotificationForMessageSerializer, UserSettingsSerializer)
+from .models import UserSettings
 
 
 class Search(APIView):
@@ -137,3 +137,28 @@ class GetSomeTrendingPosts(APIView):
             return Response({"message": "Get Some Trending Posts Failed! Something went wrong", "status": 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
+class GetUserSettings(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user = request.user
+            user_settings = UserSettings.objects.filter(user=user).first()
+            if not user_settings:
+                # If user settings not found, create default settings
+                default_settings = UserSettings.objects.create(user=user)
+                return Response({
+                    "message": "User Settings Not Found. Default settings created.",
+                    "status": 200,
+                    "data": UserSettingsSerializer(default_settings).data
+                }, status=status.HTTP_200_OK)
+            return Response({
+                "message": "User Settings Found.",
+                "status": 200,
+                "data": UserSettingsSerializer(user_settings).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({
+                "message": "Get User Settings Failed! Something went wrong",
+                "status": 500
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

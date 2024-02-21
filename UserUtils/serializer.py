@@ -3,6 +3,7 @@ from Authentication.models import UserProfile
 from django.contrib.auth.models import User
 from Notification.models import MessageNotification
 from Notification.models import FriendRequestNotification
+from UserUtils.models import UserSettings
  
  
 class UserNotificationForFriendRequestSerializer(serializers.ModelSerializer):
@@ -22,3 +23,8 @@ class UserNotificationForMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageNotification
         fields = ['user', 'profile_picture', 'fullname', 'timestamp', 'is_read', 'message']
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = '__all__'

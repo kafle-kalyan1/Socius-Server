@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'UserData',
     'Chat',
     'Notification',
+    'UserUtils',
     "corsheaders",
     'rest_framework_simplejwt',
 ]
