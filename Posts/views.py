@@ -67,7 +67,7 @@ class GetPost(APIView):
     @transaction.atomic
     def get(self, request, post_uid):
         post = Post.objects.get(id=post_uid)
-        serializer = PostSerializer(post)
+        serializer = PostSerializer(post,context={'request': request})
         comments_for_post = Comment.objects.filter(post=post,is_deleted=False).order_by('-timestamp') 
         comments = CommentSerializer(comments_for_post, many=True) 
         return Response({
