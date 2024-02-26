@@ -41,7 +41,7 @@ class UserRegistrationView(APIView):
             otp = generateOTP()
             user.save()
             user_profile = UserProfile(
-                user=user, isVerified=False, otp=otp, otp_created_at=timezone.now(), gender=request.data['gender'], date_of_birth=request.data['dob'], fullname=request.data['fullname']
+                user=user, isVerified=False, otp=otp, otp_created_at=timezone.now(), gender=request.data['gender'], date_of_birth=request.data['dob'], fullname=request.data['fullname'], profile_picture=request.data['profile_picture']
             )
             otpResponse = send_email_register(
                 self.request, request.data['email'], otp)
