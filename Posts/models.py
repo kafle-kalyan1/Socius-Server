@@ -19,7 +19,8 @@ class Post(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)
     reports_count = models.IntegerField(default=0)
-    is_deepfake = models.BooleanField(default=False)
+    deep_fake_confidence = models.FloatField(default=0)
+    is_posted_from_offline = models.BooleanField(default=False)
     sentiment_score = models.FloatField(default=0)
 
     

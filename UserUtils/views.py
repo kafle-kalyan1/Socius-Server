@@ -162,3 +162,69 @@ class GetUserSettings(APIView):
                 "message": "Get User Settings Failed! Something went wrong",
                 "status": 500
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+class UpdateUserSettings(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        try:
+            user = request.user
+            user_settings = UserSettings.objects.filter(user=user).first()
+            if not user_settings:
+                # If user settings not found, create default settings
+                default_settings = UserSettings.objects.create(user=user)
+                return Response({
+                    "message": "User Settings Not Found. Default settings created.",
+                    "status": 200,
+                    "data": UserSettingsSerializer(default_settings).data
+                }, status=status.HTTP_200_OK)
+            user_settings_serializer = UserSettingsSerializer(user_settings, data=request.data, partial=True)
+            if user_settings_serializer.is_valid():
+                user_settings_serializer.save()
+                return Response({
+                    "message": "User Settings Updated Successfully.",
+                    "status": 200,
+                    "data": user_settings_serializer.data
+                }, status=status.HTTP_200_OK)
+            return Response({
+                "message": "User Settings Update Failed! Invalid Data.",
+                "status": 400,
+                "data": user_settings_serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(e)
+            return Response({
+                "message": "Update User Settings Failed! Something went wrong",
+                "status": 500
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+class RestoreSettingsToDefault(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        try:
+            # delete old data for user settings and create new one
+            user = request.user
+            user_settings = UserSettings.objects.filter(user=user).first()
+            if not user_settings:
+                # If user settings not found, create default settings
+                default_settings = UserSettings.objects.create(user=user)
+                return Response({
+                    "message": "User Settings Not Found. Default settings created.",
+                    "status": 200,
+                    "data": UserSettingsSerializer(default_settings).data
+                }, status=status.HTTP_200_OK)
+            user_settings.delete()
+            default_settings = UserSettings.objects.create(user=user)
+            return Response({
+                "message": "User Settings Restored To Default Successfully.",
+                "status": 200,
+                "data": UserSettingsSerializer(default_settings).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({
+                "message": "Restore Settings To Default Failed! Something went wrong",
+                "detail": str(e),
+                "status": 500
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -27,7 +27,7 @@ class CreatePost(APIView):
         analyzer = SentimentIntensityAnalyzer()
         sentiment = analyzer.polarity_scores(text_content)
         user_profile = UserProfile.objects.get(user=user)
-        post = Post.objects.create(user=user, text_content=text_content,images=images ,is_deepfake=False)
+        post = Post.objects.create(user=user, text_content=text_content,images=images)
         user_posts = Post.objects.filter(user=user)
         total_sentiment = sum([post.sentiment_score for post in user_posts])
         new_overall_sentiment = total_sentiment / user_posts.count()

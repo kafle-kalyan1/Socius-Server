@@ -17,6 +17,9 @@ class UserProfile(models.Model):
     otp = models.CharField(max_length=6,blank=True, null=True)
     otp_created_at = models.DateTimeField(null=True, blank=True)
     overall_sentiment = models.FloatField(default=0.3)
+    user_karma = models.IntegerField(default=0)
+    location = models.CharField(max_length=100, blank=True, null=True)
+    
 
     def __str__(self):
         return self.user.username
