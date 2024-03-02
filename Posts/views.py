@@ -1,5 +1,4 @@
 import django.db
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -15,6 +14,8 @@ from Authentication.models import UserProfile
 from UserData.models import FriendRequest, Friendship
 from django.db import transaction
 
+from django.shortcuts import get_object_or_404
+
 
 # Create your views here.
 class CreatePost(APIView):
@@ -24,10 +25,12 @@ class CreatePost(APIView):
         user = request.user
         text_content = request.data.get('text_content')
         images = request.data.get('images')
+        deep_fake_confidence = request.data.get('deep_fake_confidence',0)
+        is_posted_from_offline = request.data.get('is_posted_from_offline',False)
         analyzer = SentimentIntensityAnalyzer()
         sentiment = analyzer.polarity_scores(text_content)
         user_profile = UserProfile.objects.get(user=user)
-        post = Post.objects.create(user=user, text_content=text_content,images=images)
+        post = Post.objects.create(user=user, text_content=text_content,images=images,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence)
         user_posts = Post.objects.filter(user=user)
         total_sentiment = sum([post.sentiment_score for post in user_posts])
         new_overall_sentiment = total_sentiment / user_posts.count()
@@ -98,14 +101,15 @@ class DeletePost(APIView):
 
    
 class ReportPost(APIView):
-      permission_classes = [IsAuthenticated]
-      @transaction.atomic
-      def post(self, request):
-         post_id = request.data.get("post_id")
-         post = Post.objects.get(id=post_id)
-         post.reports_count += 1
-         post.save()
-         return Response({'message': 'Post reported successfully'}, status=status.HTTP_200_OK)
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        post_id = request.data.get("post_id")
+        post = get_object_or_404(Post, id=post_id)  # Use get_object_or_404 here
+        post.reports_count += 1
+        post.save()
+        return Response({'message': 'Post reported successfully'}, status=status.HTTP_200_OK)
+    
       
 class LikePost(APIView):
     permission_classes = [IsAuthenticated]
@@ -188,3 +192,28 @@ class GetOwnPost(APIView):
         serializer = PostSerializer(posts, many=True,context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
      
+# class ReportPost(APIView):
+#     permission_classes = [IsAuthenticated]
+#     @transaction.atomic
+#     def post(self, request):
+#         try:
+#             post_id = request.data.get("post_id")
+#             post_data = Post.objects.get_object_or_404(id=post_id)
+#             if not post_data:
+#                 return Response({"message":"Post couldn't found!","status":404},status=status.HTTP_404_NOT_FOUND)
+#             else:
+#                 post_data.reports_count += post_data.reports_count
+#                 post_data.save()
+
+#         except Exception as e:
+#             print(e)
+#             return Response(
+#                 {
+#                     "message": "Something went wrong",
+#                     "status": 500,
+#                     "detail":e
+#                 },
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )        
+            
+            
