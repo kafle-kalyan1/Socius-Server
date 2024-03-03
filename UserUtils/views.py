@@ -16,8 +16,9 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from Notification.models import MessageNotification, Notification
 from Notification.models import FriendRequestNotification
-from UserUtils.serializer import (UserNotificationForFriendRequestSerializer,
-    UserNotificationForMessageSerializer, UserSettingsSerializer)
+from UserUtils.serializer import (NotificationSerializer,
+    UserNotificationForFriendRequestSerializer, UserNotificationForMessageSerializer,
+    UserSettingsSerializer)
 from .models import UserSettings
 
 
@@ -89,12 +90,14 @@ class GetNotifications(APIView):
             # final = UserNotificationForFriendRequestSerializer(friend_request_notifications, many=True).data
             # final2 = UserNotificationForMessageSerializer(message_notifications, many=True).data
             notifications = Notification.objects.filter(user=user, is_read=False, is_deleted=False).order_by('-timestamp')
-            print(notifications)
-            print(user)
+            notifications = NotificationSerializer(notifications, many=True).data  # Serialize the notifications here
+            
             paginator = Paginator(notifications, results_per_page)
-            paginated_notifications = paginator.get_page(page)
+            paginated_notifications = paginator.get_page(page).object_list  # Get the objects in the page
+            
             return Response({"message": "Ok", "status": 200, "data": {"notifications": paginated_notifications}},
                             status=status.HTTP_200_OK)
+            
         except Exception as e:
             print(e)
             return Response({"message": "Get Notifications Failed! Something went wrong", "status": 500},

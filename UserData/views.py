@@ -87,7 +87,7 @@ class GetOtherProfile(APIView):
                     is_friend = True
                 else:
                     # create notificaion for view profile
-                    Notification.objects.create(user=profile, notification_type='view_profile', notification_message=f'{user_profile.user.username} has viewed your profile', action_on_view=f'/profile/{user_profile.user.username}')
+                    Notification.objects.create(user=profile, notification_type='view_profile', notification_message=f'{user_profile.user.username} has viewed your profile', action_on_view=f'/u/{user_profile.user.username}')
                     
                     friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending') | Q(sender=friend_profile.user, receiver=user_profile.user, status='pending'))
                     if friend_request:
@@ -159,7 +159,7 @@ class AcceptFriendRequest(FriendRequestBase):
         friend_request.status = 'accepted'
         friend_request.save()
         Friendship.objects.create(user1=user_profile, user2=friend_profile, status='accepted')
-        Notification.objects.create(user=friend_profile, notification_type='friend_request', notification_message=f'{user_profile.username} has accepted your friend request', action_on_view=f'/profile/{user_profile.username}')
+        Notification.objects.create(user=friend_profile, notification_type='friend_request', notification_message=f'{user_profile.username} has accepted your friend request', action_on_view=f'/u/{user_profile.username}')
         return Response({'status': 200, 'message': 'Friend request accepted'}, status=status.HTTP_200_OK)
 
 class RejectFriendRequest(FriendRequestBase):

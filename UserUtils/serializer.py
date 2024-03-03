@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from Authentication.models import UserProfile
 from django.contrib.auth.models import User
-from Notification.models import MessageNotification
+from Notification.models import MessageNotification, Notification
 from Notification.models import FriendRequestNotification
 from UserUtils.models import UserSettings
  
@@ -29,3 +29,7 @@ class UserSettingsSerializer(serializers.ModelSerializer):
         model = UserSettings
         fields = '__all__'
         
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
