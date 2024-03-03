@@ -1,7 +1,10 @@
 import django.db
+import django.utils
+import django.utils.timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from Notification.models import Notification
 from .models import Post, Like, Comment
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
@@ -128,11 +131,21 @@ class LikePost(APIView):
                 like.delete()
                 user_profile.overall_sentiment = max(min(user_profile.overall_sentiment - 0.001, 1), -1)
                 user_profile.save()
+                notification = Notification.objects.filter(user=post.user, action_on_view=f"/post/{post_id}", is_deleted=False)
+                notification.update(is_deleted=True)
                 return Response({'message': 'Post unliked successfully',"status":200,'data':total_like.count()}, status=status.HTTP_200_OK)
             else:
                 Like.objects.create(post=post, liked_by=user)
                 user_profile.overall_sentiment = max(min(user_profile.overall_sentiment + 0.001, 1), -1) 
                 user_profile.save()
+                notification = Notification(
+                    timestamp = django.utils.timezone.now(),
+                    user = post.user,
+                    notification_type = "like",
+                    notification_message = f"{post.user} Liked Your Post {post.text_content.strip()[:20] + '...' if len(post.text_content) > 20 else post.text_content}",
+                    action_on_view = f"/post/{post_id}",
+                )
+                notification.save()
                 return Response({'message': 'Post liked successfully',"status":200,'data':total_like.count()}, status=status.HTTP_200_OK)
         except Exception as e:
             print(e)
@@ -152,6 +165,14 @@ class CommentPost(APIView):
             user_profile = UserProfile.objects.get(user=user)
             user_profile.overall_sentiment = max(min(user_profile.overall_sentiment + 0.002, 1), -1)
             user_profile.save()
+            notification = Notification(
+                    timestamp = django.utils.timezone.now(),
+                    user = post.user,
+                    notification_type = "comment",
+                    notification_message = f"{post.user} Commented in Your Post {comment.strip()[:20] + '...' if len(comment) > 20 else comment}",
+                    action_on_view = f"/post/{post_id}",
+                )
+            notification.save()
             comments_for_post = Comment.objects.filter(post=post, is_deleted=False).order_by('-timestamp') 
             comments = CommentSerializer(comments_for_post, many=True) 
 
@@ -175,6 +196,8 @@ class DeleteComment(APIView):
             if comment.post == post:
                 comment.is_deleted = True
                 comment.save()
+                notification = Notification.objects.filter(user=post.user, action_on_view=f"/post/{post_id}", is_deleted=False)
+                notification.update(is_deleted=True)
                 comments_for_post = Comment.objects.filter(post=post, is_deleted=False).order_by('-timestamp') 
                 comments = CommentSerializer(comments_for_post, many=True)
                 return Response({"message":"Comment deleted Sucessfully!","status":200,"data":comments.data},status=status.HTTP_200_OK)

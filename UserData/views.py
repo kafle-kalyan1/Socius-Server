@@ -7,7 +7,7 @@ from Authentication.models import UserProfile
 from Posts.models import Post
 from .models import FriendRequest, Friendship
 import base64
-from Notification.models import FriendRequestNotification
+from Notification.models import FriendRequestNotification, Notification
 from django.db.models import Q
 from django.contrib.auth.models import User
 from Authentication.serializers import UserPublicSerializer, UserSerializer,UserDetailedSerializer
@@ -77,6 +77,8 @@ class GetOtherProfile(APIView):
                 # check if both user are friends or not 
                 user_profile = UserProfile.objects.get(user=request.user)
                 friend_profile = UserProfile.objects.get(user=profile)
+                
+                
                 is_friend = False
                 is_requested = False
                 is_requested_by_me = False
@@ -84,6 +86,9 @@ class GetOtherProfile(APIView):
                 if friendship:
                     is_friend = True
                 else:
+                    # create notificaion for view profile
+                    Notification.objects.create(user=profile, notification_type='view_profile', notification_message=f'{user_profile.user.username} has viewed your profile', action_on_view=f'/profile/{user_profile.user.username}')
+                    
                     friend_request = FriendRequest.objects.filter(Q(sender=user_profile.user, receiver=friend_profile.user, status='pending') | Q(sender=friend_profile.user, receiver=user_profile.user, status='pending'))
                     if friend_request:
                         is_requested = True
@@ -142,6 +147,7 @@ class SendFriendRequest(FriendRequestBase):
         friend_request = FriendRequest.objects.create(sender=user_profile, receiver=friend_profile, status='pending')
         friend_request.save()
         FriendRequestNotification.objects.create(from_user=user_profile, to_user=friend_profile)
+        Notification.objects.create(user=friend_profile, notification_type='friend_request', notification_message=f'{user_profile.username} has sent you a friend request', action_on_view=f'/profile/{user_profile.username}')
         return Response({'status': 200, 'message': 'Friend request sent'}, status=status.HTTP_200_OK)
 
 class AcceptFriendRequest(FriendRequestBase):
@@ -153,6 +159,7 @@ class AcceptFriendRequest(FriendRequestBase):
         friend_request.status = 'accepted'
         friend_request.save()
         Friendship.objects.create(user1=user_profile, user2=friend_profile, status='accepted')
+        Notification.objects.create(user=friend_profile, notification_type='friend_request', notification_message=f'{user_profile.username} has accepted your friend request', action_on_view=f'/profile/{user_profile.username}')
         return Response({'status': 200, 'message': 'Friend request accepted'}, status=status.HTTP_200_OK)
 
 class RejectFriendRequest(FriendRequestBase):

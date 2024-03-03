@@ -28,3 +28,4 @@ class UserSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSettings
         fields = '__all__'
+        
