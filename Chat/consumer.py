@@ -9,6 +9,8 @@ from UserData.models import Friendship
 from django.db.models import Q
 from Notification.consumers import NotificationConsumer
 from UserData.models import UserProfile
+from UserUtils.models import UserSettings
+
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -81,6 +83,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message_text = text_data_json['message']
         sender = await database_sync_to_async(User.objects.get)(username=self.username_from)
         receiver = await database_sync_to_async(User.objects.get)(username=self.username_to)
+        receiver_settings = await self.get_user_settings(receiver)
+
 
         await self.save_message_notification_to_database(sender, receiver, message_text, text_data_json['timestamp'])
 
@@ -102,17 +106,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         profile_picture, fullname = await self.get_user_profile(self.username_from)
 
-        await self.channel_layer.group_send(
-            f"notifications_{self.username_to}",
-            {
-                'type': 'message',
-                'message': message_text,
-                'sender': self.username_from,
-                'timestamp': text_data_json['timestamp'],
-                'profile_picture': profile_picture,
-                'fullname': fullname,
-            }
-        )
+        if receiver_settings.message_notification != "none":
+            await self.channel_layer.group_send(
+                f"notifications_{self.username_to}",
+                {
+                    'type': 'message',
+                    'message': message_text,
+                    'sender': self.username_from,
+                    'timestamp': text_data_json['timestamp'],
+                    'profile_picture': profile_picture,
+                    'fullname': fullname,
+                }
+            )
 
     async def message(self, event):
         message = event['message']
@@ -122,3 +127,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username_to': event['username_to'],
             'timestamp': event['timestamp'],
         })) 
+        
+    @database_sync_to_async
+    def get_user_settings(self, username):
+        user = User.objects.get(username=username)
+        return UserSettings.objects.get(user=user)

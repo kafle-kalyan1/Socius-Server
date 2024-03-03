@@ -108,7 +108,9 @@ class ReportPost(APIView):
         post = get_object_or_404(Post, id=post_id)  # Use get_object_or_404 here
         post.reports_count += 1
         post.save()
-        return Response({'message': 'Post reported successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Post reported successfully',
+        'status':200    
+        }, status=status.HTTP_200_OK)
     
       
 class LikePost(APIView):
