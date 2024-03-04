@@ -51,6 +51,8 @@ class GetPosts(APIView):
         sort = request.GET.get('sort', 'default')
         user = request.user
         user_profile = UserProfile.objects.get(user=user)
+        page = int(request.GET.get('page', 1))  
+        results_per_page = 5 
 
         if sort == 'default':
             user_sentiment = user_profile.overall_sentiment
@@ -64,7 +66,10 @@ class GetPosts(APIView):
             friends = [friendship.user1 if friendship.user2 == user_profile.user else friendship.user2 for friendship in friendships]
             posts = Post.objects.filter(is_deleted=False, user__in=friends).order_by('-timestamp')
 
-        serializer = PostSerializer(posts, many=True,context={'request': request})
+        paginator = Paginator(posts, results_per_page)
+        paginated_posts = paginator.get_page(page)
+
+        serializer = PostSerializer(paginated_posts, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     
