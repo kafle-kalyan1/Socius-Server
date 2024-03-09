@@ -5,13 +5,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from Notification.models import Notification
-from .models import Post, Like, Comment
+from .models import Comment, Like, Post, Report
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.contrib.auth.models import User
-from .serializers import PostSerializer, CommentSerializer
+from .serializers import (CommentSerializer, PostSerializer, PostWithReportsSerializer,
+    ReportedPostsSerializer)
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from Authentication.models import UserProfile
 from UserData.models import FriendRequest, Friendship
@@ -112,13 +113,18 @@ class ReportPost(APIView):
     permission_classes = [IsAuthenticated]
     @transaction.atomic
     def post(self, request):
-        post_id = request.data.get("post_id")
-        post = get_object_or_404(Post, id=post_id)  # Use get_object_or_404 here
-        post.reports_count += 1
-        post.save()
-        return Response({'message': 'Post reported successfully',
-        'status':200    
-        }, status=status.HTTP_200_OK)
+        try:
+            post_id = request.data.get("post_id")
+            post = get_object_or_404(Post, id=post_id) 
+            post.reports_count += 1
+            post.save()
+            Report.objects.create(post=post, reported_by=request.user, report_reason=request.data.get("report_reason"))
+            return Response({'message': 'Post reported successfully',
+            'status':200    
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"message":"Some thing went wrong","status":500,'detail':e},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
       
 class LikePost(APIView):
@@ -247,3 +253,42 @@ class GetOwnPost(APIView):
 #             )        
             
             
+class GetReportedPosts(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def get(self, request):
+        user = request.user
+        if user.is_staff:
+            reported_posts = Post.objects.filter(reports__isnull=False).distinct()
+            serializer = PostWithReportsSerializer(reported_posts, many=True, context={'request': request})
+            return Response({"message":"Posts Loaded Sucesfully","status":200,"data":serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN) 
+    
+class RemoveFakeReports(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        user = request.user
+        if user.is_staff:
+            post_id = request.data.get("post_id")
+            post = Post.objects.get(id=post_id)
+            post.reports_count = 0
+            post.save()
+            reports = Report.objects.filter(post=post)
+            reports.delete()
+            return Response({"message":"Fake Reports Removed Sucesfully","status":200}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        
+class DeleteReportedPost(APIView):
+    permission_classes = [IsAuthenticated,]
+    @transaction.atomic
+    def post(self, request):
+        user = request.user
+        if user.is_staff:
+            pass
+        else:
+            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+            
+        

@@ -10,6 +10,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'email',
+            'is_staff',
             'password',
             'last_login',
             'is_active',

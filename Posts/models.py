@@ -50,3 +50,14 @@ class Comment(models.Model):
     
     def __str__(self):
         return self.user.username + " " + self.post
+    
+class Report(models.Model):
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='reports')
+    reported_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='reports')
+    report_reason = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.reported_by.username + " " + self.post.user.username
+    
