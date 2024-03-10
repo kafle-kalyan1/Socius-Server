@@ -13,6 +13,8 @@ urlpatterns = [
    path('getOwnPost/', GetOwnPost.as_view(), name='get-own-post'),
    path('reportPost/', ReportPost.as_view(), name='report-post'),
    path('getReportedPosts/', GetReportedPosts.as_view(), name='get-reported-posts'),
+   path('deleteReportedPost/', DeleteReportedPost.as_view(), name='delete-reported-post'),
+   path('removeFakeReports/', RemoveFakeReports.as_view(), name='remove-fake-reports'),
    
    
 ]

@@ -2,14 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 from django.contrib.postgres.fields import ArrayField
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
     
-def analyze_sentiment(text):
-    analyzer = SentimentIntensityAnalyzer()
-    sentiment_scores = analyzer.polarity_scores(text)
-    return sentiment_scores
     
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -27,11 +22,7 @@ class Post(models.Model):
     def __str__(self):
       return self.posted_by.user
     
-  
-    def save(self, *args, **kwargs):
-        sentiment_scores = analyze_sentiment(self.text_content)
-        self.sentiment_score = sentiment_scores['compound']
-        super().save(*args, **kwargs)
+
 
 class Like(models.Model):
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='likes')

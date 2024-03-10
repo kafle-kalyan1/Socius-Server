@@ -19,30 +19,35 @@ from UserData.models import FriendRequest, Friendship
 from django.db import transaction
 
 from django.shortcuts import get_object_or_404
-
+import better_profanity
 
 # Create your views here.
 class CreatePost(APIView):
     permission_classes = [IsAuthenticated]
     @transaction.atomic
     def post(self, request):
-        user = request.user
-        text_content = request.data.get('text_content')
-        images = request.data.get('images')
-        deep_fake_confidence = request.data.get('deep_fake_confidence',0)
-        is_posted_from_offline = request.data.get('is_posted_from_offline',False)
-        analyzer = SentimentIntensityAnalyzer()
-        sentiment = analyzer.polarity_scores(text_content)
-        user_profile = UserProfile.objects.get(user=user)
-        post = Post.objects.create(user=user, text_content=text_content,images=images,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence)
-        user_posts = Post.objects.filter(user=user)
-        total_sentiment = sum([post.sentiment_score for post in user_posts])
-        new_overall_sentiment = total_sentiment / user_posts.count()
-        new_overall_sentiment = max(min(new_overall_sentiment + 0.005, 1), -1)
-        user_profile.overall_sentiment = new_overall_sentiment
-        user_profile.save()
-
-        return Response({'message': 'Post created successfully'}, status=status.HTTP_201_CREATED)
+        try:
+            user = request.user
+            text_content = request.data.get('text_content')
+            censor = better_profanity.Profanity()
+            images = request.data.get('images')
+            deep_fake_confidence = request.data.get('deep_fake_confidence',0)
+            is_posted_from_offline = request.data.get('is_posted_from_offline',False)
+            analyzer = SentimentIntensityAnalyzer()
+            sentiment = analyzer.polarity_scores(text_content)
+            user_profile = UserProfile.objects.get(user=user)
+            text_content = censor.censor(text_content)
+            post = Post.objects.create(user=user, text_content=text_content,images=images,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence, sentiment_score=sentiment['compound'])
+            user_posts = Post.objects.filter(user=user)
+            total_sentiment = sum([post.sentiment_score for post in user_posts])
+            new_overall_sentiment = total_sentiment / user_posts.count()
+            new_overall_sentiment = max(min(new_overall_sentiment + 0.005, 1), -1)
+            user_profile.overall_sentiment = new_overall_sentiment
+            user_profile.save()
+            return Response({'message': 'Post created successfully',"status":201}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
+            return Response({"message":"Some thing went wrong","status":500,'detail':e},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GetPosts(APIView):
@@ -272,7 +277,7 @@ class RemoveFakeReports(APIView):
         user = request.user
         if user.is_staff:
             post_id = request.data.get("post_id")
-            post = Post.objects.get(id=post_id)
+            post = Post.objects.get(id=post_id, is_deleted=False)
             post.reports_count = 0
             post.save()
             reports = Report.objects.filter(post=post)
@@ -287,7 +292,18 @@ class DeleteReportedPost(APIView):
     def post(self, request):
         user = request.user
         if user.is_staff:
-            pass
+            post_id = request.data.get("post_id")
+            if not post_id:
+                return Response({"message":"Post Id is required","status":400},status=status.HTTP_400_BAD_REQUEST)
+            elif not Post.objects.filter(id=post_id).exists():
+                return Response({"message":"Post couldn't found!","status":404},status=status.HTTP_404_NOT_FOUND)
+            else:
+                post = Post.objects.get(id=post_id)
+                post.is_deleted = True
+                post.save()
+                reports = Report.objects.filter(post=post)
+                reports.delete()
+                return Response({"message":"Post Deleted Sucesfully","status":200}, status=status.HTTP_200_OK)
         else:
             return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
             
