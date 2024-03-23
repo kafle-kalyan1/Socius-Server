@@ -9,6 +9,7 @@ urlpatterns = [
     path('chat/', include('Chat.urls')),
     path('posts/', include('Posts.urls')),
     path('utils/', include('UserUtils.urls')),
+    path('notifications/', include('Notification.views')),
 ]
 
 

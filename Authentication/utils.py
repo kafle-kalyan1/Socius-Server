@@ -14,7 +14,7 @@ import secrets
 
 
 def send_email_register(request, email, otp):
-    subject = "Verify Your Account - TrendWave"
+    subject = "Verify Your Account - Socius"
     from_email = server.settings.EMAIL_HOST_USER
     to_email = [email]
     print(otp)

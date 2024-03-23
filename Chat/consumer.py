@@ -91,6 +91,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.save_message_to_database(sender, receiver, message_text, text_data_json['timestamp'])
         # print group details
         # Broadcast the message to the group
+        profile_picture, fullname = await self.get_user_profile(self.username_from)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -99,13 +100,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'username_from': self.username_from,
                 'username_to': self.username_to,
                 'timestamp': text_data_json['timestamp'],
+                'profile_picture': profile_picture,
+                'fullname': fullname,
             }
         )
         
 
         
         profile_picture, fullname = await self.get_user_profile(self.username_from)
-
         if receiver_settings.message_notification != "none":
             await self.channel_layer.group_send(
                 f"notifications_{self.username_to}",
@@ -126,6 +128,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username_from': event['username_from'],
             'username_to': event['username_to'],
             'timestamp': event['timestamp'],
+            'profile_picture': event['profile_picture'],
         })) 
         
     @database_sync_to_async

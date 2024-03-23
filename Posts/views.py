@@ -1,3 +1,4 @@
+import django.contrib.auth
 import django.db
 import django.utils
 import django.utils.timezone
@@ -5,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from Notification.models import Notification
+from Posts.utils import send_email_post_warning
 from .models import Comment, Like, Post, Report
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
@@ -58,7 +60,7 @@ class GetPosts(APIView):
         user = request.user
         user_profile = UserProfile.objects.get(user=user)
         page = int(request.GET.get('page', 1))  
-        results_per_page = 5 
+        results_per_page = 15 
 
         if sort == 'default':
             user_sentiment = user_profile.overall_sentiment
@@ -307,4 +309,29 @@ class DeleteReportedPost(APIView):
         else:
             return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
             
-        
+class SetWarningMailToPostOwner(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        try:
+            if user.is_staff:
+                post_id = request.GET.get("post_id")
+                # get post owner email
+                post = Post.objects.get(id=post_id)
+                email = User.objects.get(id=post.user_id).email
+                response = send_email_post_warning(request, email, post_id)
+                if response.status_code == 200:
+                    return Response({"message":"Warning Mail Set Sucesfully","status":200}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message":"Failed to send email","status":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+            else:
+                return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            print(e)
+            return Response({
+                "message":"Something Went Wrong",
+                "status":500,
+                "detail":e
+            },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

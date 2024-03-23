@@ -53,10 +53,11 @@ class PostSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user_profile = serializers.SerializerMethodField()
+    user = UserPublicSerializer()
 
     class Meta:
         model = Comment
-        fields = ['id','user','text','timestamp','user_profile']
+        fields = ['id','user','text','timestamp','user_profile','user']
     
     def get_user_profile(self, obj):
         user_profile = UserProfile.objects.get(user=obj.user)

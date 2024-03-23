@@ -73,6 +73,7 @@ class MessageView(APIView):
         messages_query = Message.objects.filter(
         Q(sender=user, receiver=other_user) | Q(sender=other_user, receiver=user)
         ).order_by('-timestamp')
+        print(messages_query.query)
         paginator = Paginator(messages_query, page_size)
         
         try:

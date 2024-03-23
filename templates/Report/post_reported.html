@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Post Reported Warning - Socius</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #ff4d4d;
+        }
+        .content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .content p {
+            margin-bottom: 10px;
+        }
+        .content .post-content {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Post Reported Warning</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ user.username }},</p>
+            <p>We regret to inform you that your post on Socius has been reported multiple times by other users for potential violations of our community guidelines.</p>
+            <div class="post-content">
+                <p>{{ post.text_content }}</p>
+                {% if post.images %}
+                    {% for image in post.images %}
+                        <img src="{{ image }}" alt="Post Image" width="200">
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <p>We take these reports very seriously and are committed to maintaining a safe and respectful community. Please review our <a href="{{ guidelines_url }}">community guidelines</a> and ensure that your future posts comply with the rules.</p>
+            <p>If your post receives further reports or violates our guidelines, we may have to take additional action, including restricting your account or removing the post.</p>
+            <p>Thank you for your understanding and cooperation.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; Socius</p>
+        </div>
+    </div>
+</body>
+</html>
