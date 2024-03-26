@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from Notification.models import Notification
 from Posts.utils import send_email_post_warning
-from .models import Comment, Like, Post, Report
+from .models import Comment, Like, Post, Report, SavedPost
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -334,4 +334,35 @@ class SetWarningMailToPostOwner(APIView):
                 "status":500,
                 "detail":e
             },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+class SavePost(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        try:
+            post_id = request.data.get("post_id")
+            post = Post.objects.get(id=post_id)
+            user = request.user
+            saved_post = SavedPost.objects.filter(post=post, saved_by=user)
+            if saved_post.exists():
+                saved_post.delete()
+                return Response({'message': 'Post unsaved successfully',"status":200}, status=status.HTTP_200_OK)
+            else:
+                SavedPost.objects.create(post=post, saved_by=user)
+                return Response({'message': 'Post saved successfully',"status":200}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response({"message":"Some thing went wrong","status":500},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class GetSavedPosts(APIView):   
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def get(self, request):
+        user = request.user
+        saved_posts = SavedPost.objects.filter(saved_by=user)
+        serializer = PostSerializer([saved_post.post for saved_post in saved_posts], many=True, context={'request': request})
+        return Response({
+            "message":"Loaded",
+            "data":serializer.data,
+            "status":200
+            }, status=status.HTTP_200_OK)

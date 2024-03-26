@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .views import (CommentPost, CreatePost, DeleteComment, DeletePost, DeleteReportedPost,
-   GetOwnPost, GetPost, GetPosts, GetReportedPosts, LikePost, RemoveFakeReports, ReportPost,
-   SetWarningMailToPostOwner)
+   GetOwnPost, GetPost, GetPosts, GetReportedPosts, GetSavedPosts, LikePost, RemoveFakeReports,
+   ReportPost, SavePost, SetWarningMailToPostOwner)
 
 
 urlpatterns = [
@@ -18,6 +18,7 @@ urlpatterns = [
    path('deleteReportedPost/', DeleteReportedPost.as_view(), name='delete-reported-post'),
    path('removeFakeReports/', RemoveFakeReports.as_view(), name='remove-fake-reports'),
    path('sendwarning/', SetWarningMailToPostOwner.as_view(), name='sendwarning'),
-   
+   path('savePost/', SavePost.as_view(), name='save-post'),
+   path('getSavedPosts/', GetSavedPosts.as_view(), name='get-saved-posts'),
    
 ]

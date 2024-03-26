@@ -51,4 +51,11 @@ class Report(models.Model):
     
     def __str__(self):
         return self.reported_by.username + " " + self.post.user.username
+
+class SavedPost(models.Model):
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='saved_posts')
+    saved_by = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='saved_posts')
+    timestamp = models.DateTimeField(auto_now_add=True)
     
+    def __str__(self):
+        return self.saved_by.username + " " + self.post.user.username

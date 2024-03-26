@@ -2,7 +2,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from Authentication.serializers import UserSerializer
-from .models import Comment, Like, Post, Report
+from .models import Comment, Like, Post, Report, SavedPost
 from Authentication.models import UserProfile
 from UserData.models import FriendRequest, Friendship
 
@@ -24,10 +24,11 @@ class PostSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     is_friends = serializers.SerializerMethodField()
+    is_post_saved = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence', 'likes_count','comments_count','user_has_liked','is_friends']
+        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence', 'likes_count','comments_count','user_has_liked','is_friends','is_post_saved']
 
     def get_likes_count(self, obj):
         return obj.likes.count()
@@ -50,6 +51,10 @@ class PostSerializer(serializers.ModelSerializer):
     def get_is_friends(self, obj):
         request = self.context.get('request')
         return Friendship.objects.filter(Q(user1=obj.user, user2=request.user, status='accepted') | Q(user1=request.user, user2=obj.user, status='accepted')).exists()
+    
+    def get_is_post_saved(self, obj):
+        request = self.context.get('request')
+        return SavedPost.objects.filter(post=obj, saved_by=request.user).exists()
 
 class CommentSerializer(serializers.ModelSerializer):
     user_profile = serializers.SerializerMethodField()
