@@ -175,11 +175,17 @@ class CommentPost(APIView):
     @transaction.atomic
     def post(self, request):
         try:
+            print(request)
+            print(request.data)
             post_id = request.data.get("post_id")
             post = Post.objects.get(id=post_id,is_deleted=False)
             user = request.user
-            comment = request.data.get("comment")
-            Comment.objects.create(user=user, post=post, text=comment)
+            text_comment = request.data.get("comment")
+            voice_comment = request.FILES.get('voice_comment')
+
+            Comment.objects.create(
+                user=user, post=post, text=text_comment, voice_comment=voice_comment
+            )
             user_profile = UserProfile.objects.get(user=user)
             user_profile.overall_sentiment = max(min(user_profile.overall_sentiment + 0.002, 1), -1)
             user_profile.save()
@@ -187,7 +193,7 @@ class CommentPost(APIView):
                     timestamp = django.utils.timezone.now(),
                     user = post.user,
                     notification_type = "comment",
-                    notification_message = f"{post.user} Commented in Your Post {comment.strip()[:20] + '...' if len(comment) > 20 else comment}",
+                    notification_message = f"{post.user} Commented in Your Post {text_comment.strip()[:20] + '...' if len(text_comment) > 20 else text_comment}",
                     action_on_view = f"/post/{post_id}",
                 )
             notification.save()

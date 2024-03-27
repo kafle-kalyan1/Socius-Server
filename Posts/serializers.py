@@ -1,3 +1,4 @@
+import django.contrib.sites.shortcuts
 from django.db.models import Q
 from rest_framework import serializers
 from django.contrib.auth.models import User
@@ -5,7 +6,8 @@ from Authentication.serializers import UserSerializer
 from .models import Comment, Like, Post, Report, SavedPost
 from Authentication.models import UserProfile
 from UserData.models import FriendRequest, Friendship
-
+from django.urls import reverse
+from django.utils.encoding import force_str
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,13 +64,12 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id','user','text','timestamp','user_profile','user']
-    
+        fields = ['id', 'user', 'text', 'voice_comment_url', 'timestamp', 'user_profile', 'user', 'voice_comment']
+
     def get_user_profile(self, obj):
         user_profile = UserProfile.objects.get(user=obj.user)
         return UserProfileSerializer(user_profile).data
-    
-        
+
 class ReportedPostsSerializer(serializers.ModelSerializer):
     reported_by = UserPublicSerializer(read_only=True)
     post = PostSerializer(read_only=True)
