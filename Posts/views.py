@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from Notification.models import Notification
-from Posts.utils import send_email_post_warning
+from Posts.utils import process_images, send_email_post_warning
 from .models import Comment, Like, Post, Report, SavedPost
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
@@ -22,6 +22,7 @@ from django.db import transaction
 
 from django.shortcuts import get_object_or_404
 import better_profanity
+import threading
 
 # Create your views here.
 class CreatePost(APIView):
@@ -32,21 +33,26 @@ class CreatePost(APIView):
             user = request.user
             text_content = request.data.get('text_content')
             censor = better_profanity.Profanity()
-            images = request.data.get('images')
+            images_urls = request.data.get('images', [])
             deep_fake_confidence = request.data.get('deep_fake_confidence',0)
             is_posted_from_offline = request.data.get('is_posted_from_offline',False)
             analyzer = SentimentIntensityAnalyzer()
             sentiment = analyzer.polarity_scores(text_content)
             user_profile = UserProfile.objects.get(user=user)
             text_content = censor.censor(text_content)
-            post = Post.objects.create(user=user, text_content=text_content,images=images,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence, sentiment_score=sentiment['compound'])
+            post = Post.objects.create(user=user, text_content=text_content,images=images_urls,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence, sentiment_score=sentiment['compound'])
             user_posts = Post.objects.filter(user=user)
             total_sentiment = sum([post.sentiment_score for post in user_posts])
             new_overall_sentiment = total_sentiment / user_posts.count()
             new_overall_sentiment = max(min(new_overall_sentiment + 0.005, 1), -1)
             user_profile.overall_sentiment = new_overall_sentiment
             user_profile.save()
-            return Response({'message': 'Post created successfully',"status":201}, status=status.HTTP_201_CREATED)
+            post_data = PostSerializer(post,context={'request': request}).data
+            if images_urls:
+                print(images_urls)
+                thread = threading.Thread(target=process_images, args=(post, images_urls))
+                thread.start()
+            return Response({'message': 'Post created successfully',"status":201, "data":post_data}, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(e)
             return Response({"message":"Some thing went wrong","status":500,'detail':e},status=status.HTTP_500_INTERNAL_SERVER_ERROR)

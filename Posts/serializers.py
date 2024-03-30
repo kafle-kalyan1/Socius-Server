@@ -30,7 +30,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence', 'likes_count','comments_count','user_has_liked','is_friends','is_post_saved']
+        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence','is_deep_fake', 'likes_count','comments_count','user_has_liked','is_friends','is_post_saved']
 
     def get_likes_count(self, obj):
         return obj.likes.count()
@@ -64,7 +64,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'user', 'text', 'voice_comment_url', 'timestamp', 'user_profile', 'user', 'voice_comment']
+        fields = ['id', 'user', 'text', 'timestamp', 'user_profile', 'user', 'voice_comment']
 
     def get_user_profile(self, obj):
         user_profile = UserProfile.objects.get(user=obj.user)
