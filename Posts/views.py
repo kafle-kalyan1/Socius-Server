@@ -23,6 +23,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 import better_profanity
 import threading
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
 class CreatePost(APIView):
@@ -36,11 +37,12 @@ class CreatePost(APIView):
             images_urls = request.data.get('images', [])
             deep_fake_confidence = request.data.get('deep_fake_confidence',0)
             is_posted_from_offline = request.data.get('is_posted_from_offline',False)
+            is_draft = request.data.get('is_draft',False)
             analyzer = SentimentIntensityAnalyzer()
             sentiment = analyzer.polarity_scores(text_content)
             user_profile = UserProfile.objects.get(user=user)
             text_content = censor.censor(text_content)
-            post = Post.objects.create(user=user, text_content=text_content,images=images_urls,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence, sentiment_score=sentiment['compound'])
+            post = Post.objects.create(user=user, text_content=text_content,images=images_urls,is_posted_from_offline=is_posted_from_offline,deep_fake_confidence=deep_fake_confidence, sentiment_score=sentiment['compound'], is_draft=is_draft)
             user_posts = Post.objects.filter(user=user)
             total_sentiment = sum([post.sentiment_score for post in user_posts])
             new_overall_sentiment = total_sentiment / user_posts.count()
@@ -65,8 +67,8 @@ class GetPosts(APIView):
         sort = request.GET.get('sort', 'default')
         user = request.user
         user_profile = UserProfile.objects.get(user=user)
-        page = int(request.GET.get('page', 1))  
-        results_per_page = 15 
+        page = int(request.GET.get('page', 1))
+        results_per_page = 15
 
         if sort == 'default':
             user_sentiment = user_profile.overall_sentiment
@@ -85,6 +87,7 @@ class GetPosts(APIView):
 
         serializer = PostSerializer(paginated_posts, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     
     
 class GetPost(APIView):
@@ -240,12 +243,15 @@ class DeleteComment(APIView):
       
 class GetOwnPost(APIView):
     permission_classes = [IsAuthenticated]
+
     @transaction.atomic
     def get(self, request):
         user = request.user
         posts = Post.objects.filter(is_deleted=False, user=user).order_by('-timestamp')
-        serializer = PostSerializer(posts, many=True,context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = CustomPagination()
+        result_page = paginator.paginate_queryset(posts, request)
+        serializer = PostSerializer(result_page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
      
 # class ReportPost(APIView):
 #     permission_classes = [IsAuthenticated]
@@ -278,7 +284,7 @@ class GetReportedPosts(APIView):
     def get(self, request):
         user = request.user
         if user.is_staff:
-            reported_posts = Post.objects.filter(reports__isnull=False).distinct()
+            reported_posts = Post.objects.filter(reports__isnull=False,is_deleted=False ).distinct()
             serializer = PostWithReportsSerializer(reported_posts, many=True, context={'request': request})
             return Response({"message":"Posts Loaded Sucesfully","status":200,"data":serializer.data}, status=status.HTTP_200_OK)
         else:
@@ -289,16 +295,25 @@ class RemoveFakeReports(APIView):
     @transaction.atomic
     def post(self, request):
         user = request.user
-        if user.is_staff:
-            post_id = request.data.get("post_id")
-            post = Post.objects.get(id=post_id, is_deleted=False)
-            post.reports_count = 0
-            post.save()
-            reports = Report.objects.filter(post=post)
-            reports.delete()
-            return Response({"message":"Fake Reports Removed Sucesfully","status":200}, status=status.HTTP_200_OK)
-        else:
-            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        try:    
+            if user.is_staff:
+                post_id = request.data.get("post_id")
+                post = Post.objects.get(id=post_id, is_deleted=False)
+                print(post)
+                post.reports_count = 0
+                post.save()
+                reports = Report.objects.filter(post=post)
+                reports.delete()
+                return Response({"message":"Fake Reports Removed Sucesfully","status":200}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            print(e)
+            return Response({
+                "message":"Something Went Wrong",
+                "status":500,
+                "detail":e
+            },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class DeleteReportedPost(APIView):
     permission_classes = [IsAuthenticated,]
@@ -378,3 +393,45 @@ class GetSavedPosts(APIView):
             "data":serializer.data,
             "status":200
             }, status=status.HTTP_200_OK)
+    
+class GetDeepFakePosts(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def get(self, request):
+        if(request.user and request.user.is_staff):
+            try:
+                deep_fake_posts = Post.objects.filter(is_deep_fake=True)
+                serializer = PostSerializer(deep_fake_posts, many=True, context={'request': request})
+                return Response({"message":"Loaded","data":serializer.data,"status":200}, status=status.HTTP_200_OK)
+            except Exception as e:
+                print(e)
+                return Response({"message":"Some thing went wrong","status":500},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        else:
+            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        
+
+class ReportDeepFakePostByAdmin(APIView):
+    permission_classes = [IsAuthenticated]
+    @transaction.atomic
+    def post(self, request):
+        if(request.user and request.user.is_staff):
+            try:
+                post_id = request.data.get("post_id")
+                deep_fake_details = request.data.get("deep_fake_details")
+                post = Post.objects.get(id=post_id)
+                post.is_deep_fake = False
+                post.deep_fake_details = deep_fake_details
+                post.save()
+                return Response({"message":"Post Reported Sucesfully","status":200}, status=status.HTTP_200_OK)
+            except Exception as e:
+                print(e)
+                return Response({"message":"Some thing went wrong","status":500},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            return Response({"message":"You are not authorized to view this page","status":403},status=status.HTTP_403_FORBIDDEN)
+        
+class CustomPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    

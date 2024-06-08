@@ -27,10 +27,11 @@ class PostSerializer(serializers.ModelSerializer):
     user_has_liked = serializers.SerializerMethodField()
     is_friends = serializers.SerializerMethodField()
     is_post_saved = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence','is_deep_fake', 'likes_count','comments_count','user_has_liked','is_friends','is_post_saved']
+        fields = ['id', 'user', 'user_profile', 'text_content', 'images', 'timestamp','is_posted_from_offline', 'deep_fake_confidence','is_deep_fake', 'likes_count','comments_count','user_has_liked','is_friends','is_post_saved','comments']
 
     def get_likes_count(self, obj):
         return obj.likes.count()
@@ -57,6 +58,11 @@ class PostSerializer(serializers.ModelSerializer):
     def get_is_post_saved(self, obj):
         request = self.context.get('request')
         return SavedPost.objects.filter(post=obj, saved_by=request.user).exists()
+    
+    # get top 3 new comments
+    def get_comments(self, obj):
+        comments = obj.comments.filter(is_deleted=False).order_by('-timestamp')[:3]
+        return CommentSerializer(comments, many=True, context=self.context).data
 
 class CommentSerializer(serializers.ModelSerializer):
     user_profile = serializers.SerializerMethodField()

@@ -36,20 +36,28 @@ class RecommendedFriends(APIView):
                 friends_set.add(friendship.user2)
 
             friends_set.discard(user_profile.user)
-
+            
             recommended_friends_list = []
             for user_profile in all_users:
                 is_friend = user_profile.user in friends_set
                 is_requested = user_profile.user in received_set or user_profile.user in sent_set
                 is_requested_by_me = user_profile.user in sent_set
+                number_of_friends = Friendship.objects.filter(Q(user1=user_profile.user, status='accepted') | Q(user2=user_profile.user, status='accepted')).count()
 
                 recommended_friends_list.append({
                     'username': user_profile.user.username,
                     'profile_pic': user_profile.profile_picture,
                     'fullname': user_profile.fullname,
+                    'date_of_birth' : user_profile.date_of_birth,
+                    'bio' : user_profile.bio,
+                    'gender' : user_profile.gender,
+                    'location': user_profile.location,
+                    'date_joined': user_profile.user.date_joined,
+                    
                     'is_friend': is_friend,
                     'is_requested': is_requested,
                     'is_requested_by_me': is_requested_by_me,
+                    'number_of_friends' : number_of_friends
                 })
 
             return Response({'status': 200, 'data': recommended_friends_list}, status=status.HTTP_200_OK)

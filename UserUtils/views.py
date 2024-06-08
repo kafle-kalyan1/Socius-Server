@@ -1,4 +1,6 @@
+import datetime
 from django.shortcuts import render
+import django.utils
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -20,7 +22,9 @@ from UserUtils.serializer import (NotificationSerializer,
     UserNotificationForFriendRequestSerializer, UserNotificationForMessageSerializer,
     UserSettingsSerializer)
 from .models import UserSettings
-
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count
 
 class Search(APIView):
     permission_classes = [IsAuthenticated]
@@ -129,16 +133,28 @@ class GetSomeTrendingPosts(APIView):
         try:
             user = request.user
             user_data = UserProfile.objects.get(user=user)
-            page = int(request.data.get("page", 1))
+            page = int(request.query_params.get("page", 1))
             results_per_page = 10
-            posts = Post.objects.all().order_by('-timestamp')[:10]
+
+            # Filter posts from the last 7 days
+            seven_days_ago = timezone.now() - timedelta(days=7)
+            posts = Post.objects.filter(timestamp__gte=seven_days_ago)
+
+            # Annotate posts with popularity score (likes + comments)
+            posts = posts.annotate(
+                popularity=Count('likes') + Count('comments')
+            ).order_by('-popularity', '-timestamp')
+
             paginator = Paginator(posts, results_per_page)
             paginated_posts = paginator.get_page(page)
-            serializer = PostSerializer(paginated_posts, many=True)
-            return Response({"message": "Ok", "status": 500, "data": serializer.data},
+            serializer = PostSerializer(paginated_posts.object_list, many=True, context={'request': request})
+            return Response({"message": "Ok", "status": 200, "data": serializer.data},
                             status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({"message": "User profile not found", "status": 404},
+                            status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            print(e)
+            print(e)  # Log the exception for debugging purposes
             return Response({"message": "Get Some Trending Posts Failed! Something went wrong", "status": 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             

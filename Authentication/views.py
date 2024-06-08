@@ -325,3 +325,32 @@ class ResetPassword(APIView):
         except Exception as e:
             print(e)
             return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ResendOTP(APIView):
+    @transaction.atomic
+    def post(self, request):
+        try:
+            username = request.data.get('username')
+            if username is None:
+                return Response({'message': "Username is not provided","status_code":400}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.get(username=username)
+            if user is None:
+                return Response({'message': "User not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            profile = UserProfile.objects.get(user=user)
+            if profile is None:
+                return Response({'message': "User profile not found","status_code":404}, status=status.HTTP_404_NOT_FOUND)
+            otp = generateOTP()
+            profile.otp = otp
+            profile.otp_created_at = timezone.now()
+            profile.save()
+            emailResponse = send_email_register(
+                self.request, user.email, otp)
+            if emailResponse.status_code == 200:
+                return Response({'message': "Verification mail successfully send.","status_code":200}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': "Failed to send email. User creation aborted.","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            print(e)
+            return Response({'message': "Something went wrong on the server","status_code":500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        

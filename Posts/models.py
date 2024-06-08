@@ -19,6 +19,7 @@ class Post(models.Model):
     deep_fake_details = models.TextField(blank=True, null=True)
     is_deep_fake = models.BooleanField(default=False)
     sentiment_score = models.FloatField(default=0)
+    is_draft = models.BooleanField(default=False)
     # post_harmfulness = models.FloatField(default=0)
 
     

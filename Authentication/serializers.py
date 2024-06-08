@@ -42,8 +42,9 @@ class UserDetailedSerializer(serializers.ModelSerializer):
     date_of_birth = serializers.DateField()
     gender = serializers.CharField()
     bio = serializers.CharField()
+    location = serializers.CharField()
     profile_picture = serializers.CharField()
 
     class Meta:
         model = UserProfile
-        fields = ['username', 'is_active','date_joined', 'fullname',  'date_of_birth', 'gender', 'bio', 'profile_picture']
+        fields = ['username', 'is_active','date_joined', 'fullname',  'date_of_birth', 'gender', 'bio', 'profile_picture','location']

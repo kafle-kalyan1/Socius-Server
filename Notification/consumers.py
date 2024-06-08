@@ -64,7 +64,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                     f"notifications_{receiver}",
                     {
                         'type': 'post_like',
-                        'message': f'Your post {post_id} has a new like',
+                        'message': f'Your post has a new like',
                         'sender': liker_username,
                         'post': post_id,
                         'profile_picture': profile_picture,
