@@ -67,5 +67,4 @@ typing_extensions
 tzdata
 urllib3
 vaderSentiment
-wheel
 wrapt
