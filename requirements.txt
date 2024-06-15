@@ -61,7 +61,6 @@ sqlparse
 termcolor
 threadpoolctl
 Twisted
-twisted-iocpsupport
 txaio
 typing_extensions
 tzdata
