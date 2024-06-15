@@ -58,7 +58,6 @@ service-identity
 setuptools
 six
 sqlparse
-tensorboard
 termcolor
 threadpoolctl
 Twisted
@@ -68,7 +67,5 @@ typing_extensions
 tzdata
 urllib3
 vaderSentiment
-Werkzeug
 wheel
 wrapt
-zope.interface
