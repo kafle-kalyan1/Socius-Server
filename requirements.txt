@@ -67,3 +67,4 @@ tzdata
 urllib3
 vaderSentiment
 wrapt
+gunicorn
