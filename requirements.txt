@@ -61,8 +61,8 @@ sqlparse
 tensorboard
 tensorboard-data-server
 tensorflow==2.11.0
-tensorflow-hub
-tensorflow-intel
+tensorflow-hub==0.12.0  # Compatible with tensorflow 2.11.0
+tensorflow-intel==2.11.0 
 termcolor
 threadpoolctl
 Twisted
