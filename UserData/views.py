@@ -80,6 +80,8 @@ class GetOtherProfile(APIView):
                 user_profile = UserProfile.objects.get(user=profile)
                 user_serializer = UserDetailedSerializer(user_profile)
                 user_posts = Post.objects.filter(user=profile, is_deleted=False).order_by('-timestamp')
+                # filter and only get 15 mosts post recent
+                user_posts = user_posts[:15]
                 posts = PostSerializer(user_posts, many=True,context={'request': request})
                 
                 # check if both user are friends or not 

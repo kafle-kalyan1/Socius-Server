@@ -386,7 +386,7 @@ class GetSavedPosts(APIView):
     @transaction.atomic
     def get(self, request):
         user = request.user
-        saved_posts = SavedPost.objects.filter(saved_by=user)
+        saved_posts = SavedPost.objects.filter(saved_by=user).order_by('-timestamp')
         serializer = PostSerializer([saved_post.post for saved_post in saved_posts], many=True, context={'request': request})
         return Response({
             "message":"Loaded",

@@ -60,6 +60,7 @@ def process_images(post, images_urls):
                 print("FAKE")
                 is_deep_fake = True
                 post.is_deep_fake = is_deep_fake
+                post.deep_fake_details = response_data
                 post.save()
                 return
 

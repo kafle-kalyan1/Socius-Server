@@ -116,23 +116,26 @@ ASGI_APPLICATION = 'server.asgi.application'
 
 DATABASES = {
     # postgre local server
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "socius",
-        "USER": "postgres",
-        "PASSWORD": "12345",
-        "HOST": "localhost",
-        "PORT": "5432",
-    },
+    # "default": {
+    #     "ENGINE": "django.db.backends.postgresql_psycopg2",
+    #     "NAME": "socius",
+    #     "USER": "postgres",
+    #     "PASSWORD": "12345",
+    #     "HOST": "localhost",
+    #     "PORT": "5432",
+    # },
 
-    #    "default": {
-    #         "ENGINE": "django.db.backends.postgresql",
-    #         "NAME": "socius",
-    #         "USER": "kalyankafle123",
-    #         "PASSWORD": "hljYmQKv01Go",
-    #         "HOST": "ep-dry-forest-43219201.ap-southeast-1.aws.neon.tech",
-    #         "PORT": "5432",
-    #     }
+       "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "socius",
+            "USER": "socius_owner",
+            "PASSWORD": "Rfq4JZpLt0WU",
+            "HOST": "ep-wild-snowflake-a19ofdvq.ap-southeast-1.aws.neon.tech",
+            "PORT": "5432", 'OPTIONS': {
+
+            
+        }
+       }
 
 }
 
