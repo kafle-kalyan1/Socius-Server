@@ -1,19 +1,19 @@
 absl-py==2.1.0
-asgiref==3.7.2
+asgiref==3.3.4  # Compatible with Django 3.2.25
 astunparse==1.6.3
 attrs==23.2.0
-autobahn==23.1.2 
+autobahn==23.1.2  # Latest available version
 Automat==22.10.0
 better-profanity==0.7.0
 certifi
 cffi
-channels==4.0.0
+channels==3.0.4  # Compatible with Django 3.2.25
 charset-normalizer
 constantly
 cryptography
-daphne==4.0.0
-Django==5.0.1
-django-cors-headers==4.3.1
+daphne==3.0.2  # Compatible with channels 3.0.4
+Django==3.2.25  # Downgraded to the compatible version
+django-cors-headers==3.7.0  # Compatible with Django 3.2.25
 django-jazzmin==2.6.0
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
