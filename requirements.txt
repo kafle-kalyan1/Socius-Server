@@ -60,7 +60,7 @@ six
 sqlparse
 tensorboard
 tensorboard-data-server
-tensorflow==2.16.1
+tensorflow==2.11.0
 tensorflow-hub
 tensorflow-intel
 termcolor
