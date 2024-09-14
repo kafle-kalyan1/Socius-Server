@@ -206,23 +206,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_HEADERS = (
-    "accept",
     "authorization",
     "content-type",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-    'refreshToken',
-    'Authorization',
-    'Options',
-    'GET',
-    'POST',
-    'PUT',
-    'DELETE',
-    'PATCH',
-    'HEAD',
-    
-
 )
 
 
