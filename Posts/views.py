@@ -50,10 +50,10 @@ class CreatePost(APIView):
             user_profile.overall_sentiment = new_overall_sentiment
             user_profile.save()
             post_data = PostSerializer(post,context={'request': request}).data
-            if images_urls:
-                print(images_urls)
-                thread = threading.Thread(target=process_images, args=(post, images_urls))
-                thread.start()
+            # if images_urls:
+            #     print(images_urls)
+            #     thread = threading.Thread(target=process_images, args=(post, images_urls))
+            #     thread.start()
             return Response({'message': 'Post created successfully',"status":201, "data":post_data}, status=status.HTTP_201_CREATED)
         except Exception as e:
             print(e)
