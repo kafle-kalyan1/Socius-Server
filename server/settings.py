@@ -38,7 +38,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["socius.onrender.com", "localhost", "127.0.0.1", "192.168.1.3"]
+ALLOWED_HOSTS = ["socius.onrender.com", "localhost", "127.0.0.1", "192.168.1.3","socius-frontend.vercel.app"]
 
 
 # Application definition
@@ -113,32 +113,31 @@ ASGI_APPLICATION = 'server.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-DATABASES = {
-    # postgre local server
-    # "default": {
-    #     "ENGINE": "django.db.backends.postgresql_psycopg2",
-    #     "NAME": "socius",
-    #     "USER": "postgres",
-    #     "PASSWORD": "12345",
-    #     "HOST": "localhost",
-    #     "PORT": "5432",
-    # },
-
-       "default": {
-            "ENGINE": "django.db.backends.postgresql",
+if DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
             "NAME": "socius",
-            "USER": "socius_owner",
-            "PASSWORD": "Rfq4JZpLt0WU",
-            "HOST": "ep-wild-snowflake-a19ofdvq.ap-southeast-1.aws.neon.tech",
-            "PORT": "5432", 'OPTIONS': {
-
-            
+            "USER": "postgres",
+            "PASSWORD": "12345",
+            "HOST": "localhost",
+            "PORT": "5432",
         }
-       }
-
-}
-
+    }
+else:
+    DATABASES = {
+         'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'koyebdb',
+        'USER': 'koyeb-adm',
+        'PASSWORD': 'UlvIc4WNCZ5j',
+        'HOST': 'ep-misty-haze-a2tkzn1i.eu-central-1.pg.koyeb.app',
+        'OPTIONS': {'sslmode': 'require'},
+        }
+    }
+    
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -202,6 +201,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://socius.onrender.com",
+    "https://socius-frontend.vercel.app",
 ]
 
 CORS_ALLOW_HEADERS = (
@@ -240,3 +241,4 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('SMTP_EMAIL')
 EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('SMTP_EMAIL')
