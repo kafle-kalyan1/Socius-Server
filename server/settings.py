@@ -113,30 +113,30 @@ ASGI_APPLICATION = 'server.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-if DEBUG:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql_psycopg2",
-            "NAME": "socius",
-            "USER": "postgres",
-            "PASSWORD": "12345",
-            "HOST": "localhost",
-            "PORT": "5432",
-        }
+# if DEBUG:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql_psycopg2",
+#             "NAME": "socius",
+#             "USER": "postgres",
+#             "PASSWORD": "12345",
+#             "HOST": "localhost",
+#             "PORT": "5432",
+#         }
+#     }
+# else:
+DATABASES = {
+        'default': {
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': 'koyebdb',
+    'USER': 'koyeb-adm',
+    'PASSWORD': 'UlvIc4WNCZ5j',
+    'HOST': 'ep-misty-haze-a2tkzn1i.eu-central-1.pg.koyeb.app',
+    'OPTIONS': {'sslmode': 'require'},
     }
-else:
-    DATABASES = {
-         'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'koyebdb',
-        'USER': 'koyeb-adm',
-        'PASSWORD': 'UlvIc4WNCZ5j',
-        'HOST': 'ep-misty-haze-a2tkzn1i.eu-central-1.pg.koyeb.app',
-        'OPTIONS': {'sslmode': 'require'},
-        }
-    }
+}
     
 
 # Password validation
